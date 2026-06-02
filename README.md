@@ -15,12 +15,18 @@ Implemented workflow:
 5. Validate reduced-region placement using complete genomes.
 6. Train a conservative tree-path classifier.
 7. Classify partial genomes where sufficient signal is available.
+8. Generate a lightweight exploratory Markdown report from existing outputs.
 
 Milestones 0-6 are implemented. The runnable entry points are the numbered
 scripts in `scripts/`, from `01_preprocess_alignment_tree.R` through
-`08_classify_partials.R`; paths, thresholds, window settings, marker-panel
+`09_generate_report.R`; paths, thresholds, window settings, marker-panel
 selection settings, validation settings, classifier thresholds, and partial
 FASTA settings are read from `config/config.yml`.
+
+After the full workflow has been run, `scripts/09_generate_report.R` writes
+`outputs/reports/wssv_phylotyping_report.md` and optional compact CSV extracts
+under `outputs/tables/`. The report is generated from existing outputs and does
+not rerun the analysis pipeline.
 
 Generated processed data, tables, figures, models, and local raw inputs are
 ignored by git. Keep user-supplied raw inputs under `data/raw/`, and write

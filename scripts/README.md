@@ -10,6 +10,7 @@ The `scripts/` directory contains numbered entry-point scripts for the staged wo
 6. `06_validate_panel.R`: validate reduced-region placement.
 7. `07_train_classifier.R`: train the conservative tree-path classifier.
 8. `08_classify_partials.R`: classify partial genomes where signal is sufficient.
+9. `09_generate_report.R`: generate a lightweight exploratory Markdown report from existing outputs.
 
 Milestone scripts are runnable from the repository root:
 
@@ -54,3 +55,7 @@ Milestone scripts are runnable from the repository root:
   `outputs/tables/partial_node_evidence.csv` when node evidence is available.
   If no partial FASTA files are present, it writes an empty well-formed
   classification table.
+- `09_generate_report.R` reads existing processed objects and output tables,
+  writes `outputs/reports/wssv_phylotyping_report.md`, and writes optional
+  compact report extract tables under `outputs/tables/`. Missing upstream
+  outputs are reported in the Markdown instead of causing avoidable failures.
