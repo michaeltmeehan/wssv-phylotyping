@@ -11,7 +11,7 @@ The `scripts/` directory contains numbered entry-point scripts for the staged wo
 7. `07_train_classifier.R`: train the conservative tree-path classifier.
 8. `08_classify_partials.R`: classify partial genomes where signal is sufficient.
 
-Milestone 1, 2, 3, and 4 scripts are runnable from the repository root:
+Milestone scripts are runnable from the repository root:
 
 - `01_preprocess_alignment_tree.R` reads configured raw inputs, matches tree
   tips to alignment names, encodes bases, derives eligible node target masks,
@@ -46,6 +46,11 @@ Milestone 1, 2, 3, and 4 scripts are runnable from the repository root:
   `outputs/tables/classifier_tip_predictions.csv`, and, when compact enough,
   `outputs/tables/classifier_node_evidence.csv`. These predictions are
   training-set checks, not independent validation.
-
-Later-stage partial-genome classification remains a placeholder until its
-milestone begins.
+- `08_classify_partials.R` reads external partial FASTA files from the configured
+  raw partial input directory, conservatively maps aligned full-length records
+  or exact reference substrings to alignment coordinates, classifies mapped
+  records with the trained classifier, and writes
+  `outputs/tables/partial_classifications.csv` plus
+  `outputs/tables/partial_node_evidence.csv` when node evidence is available.
+  If no partial FASTA files are present, it writes an empty well-formed
+  classification table.

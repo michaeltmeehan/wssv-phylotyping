@@ -74,3 +74,13 @@ analysis:
     use_selected_panel: true
     panel_size: null
     smoothing_alpha: 1
+  partials:
+    input_dir: "data/raw/partials/"
+    fasta_extensions:
+      - "fa"
+      - "fas"
+      - "fasta"
+      - "fna"
+    mapping_mode: "auto"
+    min_observed_informative_sites: 1
+    write_unresolved_evidence: false

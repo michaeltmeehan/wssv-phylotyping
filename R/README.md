@@ -13,9 +13,10 @@ The `R/` directory will hold reusable functions shared by the numbered workflow 
   panel-summary helpers.
 - `classifier.R`: conservative tree-path classifier training, evidence, prediction,
   and save/load helpers.
-- `partials.R`: partial-sequence mapping and extraction helpers.
+- `partials.R`: partial FASTA ingestion, conservative coordinate mapping,
+  partial encoding, classifier prediction, and per-node evidence helpers.
 - `plotting.R`: shared plotting helpers.
 
-Milestones 1-5 are implemented through conservative classifier training and
-training-set sanity checks. Partial-genome ingestion/classification remains a
-placeholder until its milestone begins.
+Milestones 1-6 are implemented through conservative partial-genome
+classification with explicit unmapped, weak, conflicting, unresolved, and
+no-informative-site outcomes.
