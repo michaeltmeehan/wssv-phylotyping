@@ -18,4 +18,16 @@ analysis:
     - 500
     - 1000
     - 2000
-
+  windows:
+    widths:
+      - 300
+      - 500
+      - 1000
+      - 2000
+    overlap: 0.5
+    min_informative_snps: 1
+    snp_centered:
+      enabled: true
+      widths:
+        - 300
+        - 500
