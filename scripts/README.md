@@ -11,7 +11,7 @@ The `scripts/` directory contains numbered entry-point scripts for the staged wo
 7. `07_train_classifier.R`: train probabilistic and tree-path classifiers.
 8. `08_classify_partials.R`: classify partial genomes where signal is sufficient.
 
-Milestone 1, 2, and 3 scripts are runnable from the repository root:
+Milestone 1, 2, 3, and 4 scripts are runnable from the repository root:
 
 - `01_preprocess_alignment_tree.R` reads configured raw inputs, matches tree
   tips to alignment names, encodes bases, derives eligible node target masks,
@@ -31,5 +31,12 @@ Milestone 1, 2, and 3 scripts are runnable from the repository root:
   `outputs/tables/selected_panel_steps.csv`,
   `outputs/tables/panel_node_coverage.csv`, and
   `outputs/tables/panel_summary.csv`.
+- `06_validate_panel.R` evaluates whether selected panel regions retain
+  informative complete-genome signal, compares top-weighted and random matched
+  window baselines, summarizes random fixed-length artificial fragments, and
+  writes `outputs/tables/validation_panel_summary.csv`,
+  `outputs/tables/validation_tip_summary.csv`,
+  `outputs/tables/validation_fragment_summary.csv`, and
+  `outputs/tables/validation_baseline_summary.csv`.
 
 Later-stage scripts remain placeholders until their milestones begin.

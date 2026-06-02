@@ -8,10 +8,13 @@ The `R/` directory will hold reusable functions shared by the numbered workflow 
 - `snp_scoring.R`: per-site/per-node SNP gain scoring and summary helpers.
 - `window_scoring.R`: candidate window generation and scoring helpers.
 - `panel_selection.R`: complementary marker panel selection routines.
-- `validation.R`: leave-one-out, synthetic partial, and tree-recovery validation helpers.
+- `validation.R`: selected-window extraction, complete-genome masking,
+  synthetic fragment generation, observed signal counting, and baseline
+  panel-summary helpers.
 - `classifier.R`: classifier training and prediction helpers.
 - `partials.R`: partial-sequence mapping and extraction helpers.
 - `plotting.R`: shared plotting helpers.
 
-Milestone 1 logic is implemented for preprocessing and SNP scoring only.
-Later-stage files remain placeholders until their milestones begin.
+Milestones 1-4 are implemented through panel validation scaffolding.
+Classifier and partial-genome classification files remain placeholders until
+their milestones begin.

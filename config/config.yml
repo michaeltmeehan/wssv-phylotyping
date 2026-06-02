@@ -48,3 +48,20 @@ analysis:
     exclude_near_duplicates: false
     cap_repeated_coverage: true
     repeated_node_credit: 0
+  validation:
+    panel_sizes:
+      - 1
+      - 2
+      - 3
+      - 5
+      - 10
+    fragment_lengths:
+      - 300
+      - 500
+      - 1000
+      - 2000
+      - 5000
+    random_baseline_replicates: 10
+    min_informative_sites: 1
+    min_informative_nodes: 1
+    random_seed: 1
