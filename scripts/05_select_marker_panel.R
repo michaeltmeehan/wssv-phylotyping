@@ -1,29 +1,18 @@
 #!/usr/bin/env Rscript
 
 source("R/panel_selection.R")
+source("R/script_utils.R")
 
 if (!requireNamespace("yaml", quietly = TRUE)) {
   stop("Package 'yaml' is required to read config/config.yml.", call. = FALSE)
-}
-
-read_table_output <- function(table_dir, stem) {
-  rds_path <- file.path(table_dir, paste0(stem, ".rds"))
-  csv_path <- file.path(table_dir, paste0(stem, ".csv"))
-  if (file.exists(rds_path)) {
-    return(readRDS(rds_path))
-  }
-  if (file.exists(csv_path)) {
-    return(read.csv(csv_path, stringsAsFactors = FALSE))
-  }
-  stop("Missing ", csv_path, " or ", rds_path, ". Run scripts/04_score_windows.R first.", call. = FALSE)
 }
 
 config <- yaml::read_yaml("config/config.yml")
 table_dir <- file.path(config$paths$outputs, "tables")
 dir.create(table_dir, recursive = TRUE, showWarnings = FALSE)
 
-window_summary <- read_table_output(table_dir, "window_summary")
-window_node_summary <- read_table_output(table_dir, "window_node_summary")
+window_summary <- read_table_output(table_dir, "window_summary", "scripts/04_score_windows.R")
+window_node_summary <- read_table_output(table_dir, "window_node_summary", "scripts/04_score_windows.R")
 
 panel_cfg <- config$analysis$panel_selection
 if (is.null(panel_cfg)) {
@@ -132,6 +121,7 @@ saveRDS(panel_summary, file.path(table_dir, "panel_summary.rds"))
 message("Marker panel selection complete")
 message("  candidate windows considered: ", nrow(window_summary))
 message("  retained after filtering: ", nrow(filtered))
+message("  filtered out: ", nrow(window_summary) - nrow(filtered))
 message("  selected windows: ", nrow(selection$selected_panel))
 message("  requested panel sizes: ", paste(panel_sizes, collapse = ", "))
 message("  selected panel sizes available: ", paste(panel_sizes[panel_sizes <= nrow(selection$selected_panel)], collapse = ", "))

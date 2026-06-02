@@ -104,6 +104,7 @@ saveRDS(scored$window_node_summary, file.path(table_dir, "window_node_summary.rd
 assigned <- assign_snps_to_windows(unique(site_node_scores$site), scored$candidate_windows)
 message("Window scoring complete")
 message("  candidate windows retained: ", nrow(scored$candidate_windows))
+message("  candidate windows filtered out: ", nrow(all_windows) - nrow(scored$candidate_windows))
 message("  informative SNP assignments retained: ", nrow(assigned))
 message("  window-node rows produced: ", nrow(scored$window_node_summary))
 message("  wrote: ", candidate_windows_path)

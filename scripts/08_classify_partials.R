@@ -4,13 +4,10 @@ source("R/encoding.R")
 source("R/preprocess.R")
 source("R/classifier.R")
 source("R/partials.R")
+source("R/script_utils.R")
 
 if (!requireNamespace("yaml", quietly = TRUE)) {
   stop("Package 'yaml' is required to read config/config.yml.", call. = FALSE)
-}
-
-value_or <- function(x, default) {
-  if (is.null(x)) default else x
 }
 
 config <- yaml::read_yaml("config/config.yml")
@@ -47,6 +44,11 @@ if (nrow(partials) == 0L) {
   write.csv(empty, classification_path, row.names = FALSE)
   saveRDS(empty, file.path(table_dir, "partial_classifications.rds"))
   message("No partial FASTA files found in ", partial_dir)
+  message("  partial records read: 0")
+  message("  mapped records: 0")
+  message("  unmapped records: 0")
+  message("  resolved records: 0")
+  message("  unresolved or conservative non-resolved records: 0")
   message("  wrote empty classification table: ", classification_path)
   quit(save = "no", status = 0L)
 }
@@ -77,6 +79,10 @@ if (nrow(classified$node_evidence) > 0L) {
 message("Partial classification complete")
 message("  partial records read: ", nrow(partials))
 message("  mapped records: ", sum(mapped$mapped))
+message("  unmapped records: ", sum(!mapped$mapped))
+message("  resolved records: ", sum(classified$classifications$status == "resolved"))
+message("  unresolved or conservative non-resolved records: ", sum(classified$classifications$status != "resolved"))
+message("  node evidence rows written: ", nrow(classified$node_evidence))
 message("  classification table: ", classification_path)
 if (nrow(classified$node_evidence) > 0L) {
   message("  node evidence table: ", evidence_path)

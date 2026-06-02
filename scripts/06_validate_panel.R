@@ -1,21 +1,10 @@
 #!/usr/bin/env Rscript
 
 source("R/validation.R")
+source("R/script_utils.R")
 
 if (!requireNamespace("yaml", quietly = TRUE)) {
   stop("Package 'yaml' is required to read config/config.yml.", call. = FALSE)
-}
-
-read_table_output <- function(table_dir, stem) {
-  rds_path <- file.path(table_dir, paste0(stem, ".rds"))
-  csv_path <- file.path(table_dir, paste0(stem, ".csv"))
-  if (file.exists(rds_path)) {
-    return(readRDS(rds_path))
-  }
-  if (file.exists(csv_path)) {
-    return(read.csv(csv_path, stringsAsFactors = FALSE))
-  }
-  stop("Missing ", csv_path, " or ", rds_path, ".", call. = FALSE)
 }
 
 config <- yaml::read_yaml("config/config.yml")
@@ -29,9 +18,9 @@ if (!file.exists(precomputed_path)) {
 }
 
 pre <- readRDS(precomputed_path)
-site_node_scores <- read_table_output(table_dir, "site_node_scores")
-window_summary <- read_table_output(table_dir, "window_summary")
-selected_panel <- read_table_output(table_dir, "selected_panel")
+site_node_scores <- read_table_output(table_dir, "site_node_scores", "scripts/02_score_snps.R")
+window_summary <- read_table_output(table_dir, "window_summary", "scripts/04_score_windows.R")
+selected_panel <- read_table_output(table_dir, "selected_panel", "scripts/05_select_marker_panel.R")
 
 validation_cfg <- config$analysis$validation
 if (is.null(validation_cfg)) {
@@ -43,6 +32,7 @@ if (length(panel_sizes) == 0L || all(is.na(panel_sizes))) {
   panel_sizes <- as.integer(config$analysis$panel_selection$panel_sizes)
 }
 panel_sizes <- sort(unique(panel_sizes[!is.na(panel_sizes) & panel_sizes > 0L]))
+requested_panel_sizes <- panel_sizes
 panel_sizes <- panel_sizes[panel_sizes <= nrow(selected_panel)]
 
 fragment_lengths <- as.integer(validation_cfg$fragment_lengths)
@@ -158,7 +148,9 @@ saveRDS(validation_fragment_summary, file.path(table_dir, "validation_fragment_s
 saveRDS(validation_baseline_summary, file.path(table_dir, "validation_baseline_summary.rds"))
 
 message("Panel validation scaffold complete")
-message("  panel sizes assessed: ", paste(panel_sizes, collapse = ", "))
+message("  requested panel sizes: ", format_count_list(requested_panel_sizes))
+message("  panel sizes assessed: ", format_count_list(panel_sizes))
+message("  panel sizes skipped because unavailable: ", format_count_list(setdiff(requested_panel_sizes, panel_sizes)))
 message("  tips assessed: ", nrow(pre$aln_int))
 message("  artificial fragments generated: ", nrow(fragments))
 message("  random baseline comparisons completed: ", nrow(validation_baseline_summary[validation_baseline_summary$method == "random_matched", , drop = FALSE]))

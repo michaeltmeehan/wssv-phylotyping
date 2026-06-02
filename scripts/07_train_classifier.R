@@ -2,21 +2,10 @@
 
 source("R/encoding.R")
 source("R/classifier.R")
+source("R/script_utils.R")
 
 if (!requireNamespace("yaml", quietly = TRUE)) {
   stop("Package 'yaml' is required to read config/config.yml.", call. = FALSE)
-}
-
-read_table_output <- function(table_dir, stem) {
-  rds_path <- file.path(table_dir, paste0(stem, ".rds"))
-  csv_path <- file.path(table_dir, paste0(stem, ".csv"))
-  if (file.exists(rds_path)) {
-    return(readRDS(rds_path))
-  }
-  if (file.exists(csv_path)) {
-    return(read.csv(csv_path, stringsAsFactors = FALSE))
-  }
-  stop("Missing ", csv_path, " or ", rds_path, ".", call. = FALSE)
 }
 
 config <- yaml::read_yaml("config/config.yml")
@@ -32,16 +21,12 @@ if (!file.exists(precomputed_path)) {
 }
 
 pre <- readRDS(precomputed_path)
-site_node_scores <- read_table_output(table_dir, "site_node_scores")
-selected_panel <- read_table_output(table_dir, "selected_panel")
+site_node_scores <- read_table_output(table_dir, "site_node_scores", "scripts/02_score_snps.R")
+selected_panel <- read_table_output(table_dir, "selected_panel", "scripts/05_select_marker_panel.R")
 
 classifier_cfg <- config$analysis$classifier
 if (is.null(classifier_cfg)) {
   classifier_cfg <- list()
-}
-
-value_or <- function(x, default) {
-  if (is.null(x)) default else x
 }
 
 use_selected_panel <- isTRUE(value_or(classifier_cfg$use_selected_panel, TRUE))
@@ -111,7 +96,9 @@ if (nrow(node_evidence) <= 1000000L) {
 
 message("Classifier training complete")
 message("  wrote model: ", classifier_path)
+message("  candidate node-site score rows read: ", nrow(site_node_scores))
 message("  rules: ", nrow(classifier$rules))
+message("  classifier nodes retained: ", nrow(classifier$node_table))
 message("  informative sites: ", length(classifier$informative_sites))
 message("  resolved training-set sanity checks: ", training_summary$resolved, " of ", training_summary$tips_checked)
 message("  note: predictions are internal training-set checks, not independent validation")

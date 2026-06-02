@@ -15,8 +15,9 @@ The `R/` directory will hold reusable functions shared by the numbered workflow 
   and save/load helpers.
 - `partials.R`: partial FASTA ingestion, conservative coordinate mapping,
   partial encoding, classifier prediction, and per-node evidence helpers.
+- `script_utils.R`: small shared helpers used by numbered workflow scripts.
 - `plotting.R`: shared plotting helpers.
 
-Milestones 1-6 are implemented through conservative partial-genome
+Milestones 0-6 are implemented through conservative partial-genome
 classification with explicit unmapped, weak, conflicting, unresolved, and
 no-informative-site outcomes.
