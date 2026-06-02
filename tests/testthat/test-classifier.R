@@ -88,10 +88,52 @@ test_that("classifier stops when support is below threshold", {
 
 test_that("classifier detects conflicting evidence", {
   classifier <- make_toy_classifier(max_conflict = 0)
-  pred <- classify_tree_path(c(1L, 1L, 4L, 1L), classifier)
+  pred <- classify_tree_path(c(1L, 2L, 4L, 1L), classifier)
 
   expect_equal(pred$status, "conflicting")
   expect_true(is.na(pred$assigned_node))
+})
+
+test_that("nested node support is not a conflict", {
+  classifier <- make_toy_classifier(max_conflict = 0)
+  pred <- classify_tree_path(c(1L, 1L, 3L, 1L), classifier)
+
+  expect_equal(pred$status, "resolved")
+  expect_equal(pred$assigned_node, "11")
+  expect_equal(pred$conflict_reason, "nested_true_path_compatible_support")
+})
+
+test_that("incompatible off-path support is a conflict", {
+  classifier <- make_toy_classifier(max_conflict = 0)
+  pred <- classify_tree_path(c(1L, 2L, 4L, 1L), classifier)
+
+  expect_equal(pred$status, "conflicting")
+  expect_match(pred$conflict_reason, "incompatible")
+})
+
+test_that("weak off-path evidence does not automatically trigger conflict", {
+  classifier <- make_toy_classifier(min_support = 0.8, max_conflict = 0.2, support_margin = -1)
+  pred <- classify_tree_path(c(1L, 1L, 4L, 1L), classifier)
+
+  expect_equal(pred$status, "resolved")
+  expect_equal(pred$assigned_node, "11")
+})
+
+test_that("deepest supported node is selected correctly", {
+  classifier <- make_toy_classifier()
+  pred <- classify_tree_path(c(1L, 1L, 3L, 1L), classifier)
+
+  expect_equal(pred$assigned_node, "11")
+  expect_equal(pred$assigned_depth, 2)
+})
+
+test_that("unresolved weak support is returned when evidence is insufficient", {
+  classifier <- make_toy_classifier(min_support = 1, max_conflict = 1, support_margin = -1)
+  pred <- classify_tree_path(c(1L, 1L, 4L, 0L), classifier)
+
+  expect_equal(pred$status, "weak_support")
+  expect_true(is.na(pred$assigned_node))
+  expect_equal(pred$conflict_reason, "weak_evidence")
 })
 
 test_that("classifier objects can be saved and loaded", {
