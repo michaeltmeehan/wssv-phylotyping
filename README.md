@@ -12,9 +12,10 @@ Planned workflow:
 6. Train a probabilistic/tree-path classifier.
 7. Classify partial genomes where sufficient signal is available.
 
-Milestones 1 and 2 implement preprocessing, SNP-node scoring, and candidate
-window scoring. The runnable entry
+Milestones 1, 2, and 3 implement preprocessing, SNP-node scoring, candidate
+window scoring, and greedy complementary marker-panel selection. The runnable entry
 points are `scripts/01_preprocess_alignment_tree.R`,
 `scripts/02_score_snps.R`, `scripts/03_summarise_sites.R`, and
-`scripts/04_score_windows.R`; paths, thresholds, and candidate window settings
-are read from `config/config.yml`.
+`scripts/04_score_windows.R`, followed by
+`scripts/05_select_marker_panel.R`; paths, thresholds, candidate window
+settings, and marker-panel selection settings are read from `config/config.yml`.
