@@ -2,7 +2,8 @@
 
 ## Goal
 
-Train conservative probabilistic and tree-path classifiers for assigning complete or partial WSSV sequences to MCC-tree clades.
+Train a conservative tree-path classifier for assigning complete or partial
+encoded WSSV sequences to MCC-tree clades using only observed informative sites.
 
 ## Expected Inputs
 
@@ -13,14 +14,18 @@ Train conservative probabilistic and tree-path classifiers for assigning complet
 
 ## Expected Outputs
 
-- Naive probabilistic classifier object.
-- Tree-path classifier object.
-- Classifier performance summary.
-- Prediction output schema.
+- `outputs/models/wssv_classifier.rds`.
+- `outputs/tables/classifier_training_summary.csv`.
+- `outputs/tables/classifier_tip_predictions.csv`.
+- `outputs/tables/classifier_node_evidence.csv` when the table is compact enough.
+- Prediction diagnostics including assigned node, depth, observed informative
+  sites, nodes evaluated, support, competitor support, status, and per-node
+  evidence.
 
 ## Success Criteria
 
 - Classifiers use only observed informative sites in a query sequence.
 - The tree-path classifier stops when support is insufficient.
 - Predictions include assigned clade, support, alternative clades, sites used, and status.
-
+- Training-set predictions are labelled as internal sanity checks, not
+  independent validation.

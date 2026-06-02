@@ -11,10 +11,11 @@ The `R/` directory will hold reusable functions shared by the numbered workflow 
 - `validation.R`: selected-window extraction, complete-genome masking,
   synthetic fragment generation, observed signal counting, and baseline
   panel-summary helpers.
-- `classifier.R`: classifier training and prediction helpers.
+- `classifier.R`: conservative tree-path classifier training, evidence, prediction,
+  and save/load helpers.
 - `partials.R`: partial-sequence mapping and extraction helpers.
 - `plotting.R`: shared plotting helpers.
 
-Milestones 1-4 are implemented through panel validation scaffolding.
-Classifier and partial-genome classification files remain placeholders until
-their milestones begin.
+Milestones 1-5 are implemented through conservative classifier training and
+training-set sanity checks. Partial-genome ingestion/classification remains a
+placeholder until its milestone begins.

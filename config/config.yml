@@ -65,3 +65,12 @@ analysis:
     min_informative_sites: 1
     min_informative_nodes: 1
     random_seed: 1
+  classifier:
+    min_sites_per_node: 1
+    min_total_informative_sites: 1
+    min_support: 0.8
+    max_conflict: 0.2
+    support_margin: 0.05
+    use_selected_panel: true
+    panel_size: null
+    smoothing_alpha: 1

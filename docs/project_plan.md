@@ -70,9 +70,13 @@ Train interpretable classifiers that use observed informative sites only. Candid
 
 Primary outputs:
 
-- `outputs/models/classifier_naive.rds`
-- `outputs/models/classifier_treepath.rds`
-- Classifier validation report.
+- `outputs/models/wssv_classifier.rds`
+- Training-set sanity-check prediction tables.
+- Per-node evidence diagnostics when compact enough.
+
+Training-set predictions are internal checks only; independent validation is
+handled by the Stage 4 validation scaffolding and future external partial-genome
+work.
 
 ## Stage 6: Partial-Genome Classification
 
@@ -93,4 +97,3 @@ The final project should produce:
 - A validation report.
 - A partial-genome classifier.
 - A retrospective classification of informative partial WSSV sequences.
-

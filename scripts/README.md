@@ -8,7 +8,7 @@ The `scripts/` directory contains numbered entry-point scripts for the staged wo
 4. `04_score_windows.R`: aggregate SNP signal into genomic windows.
 5. `05_select_marker_panel.R`: choose complementary marker windows.
 6. `06_validate_panel.R`: validate reduced-region placement.
-7. `07_train_classifier.R`: train probabilistic and tree-path classifiers.
+7. `07_train_classifier.R`: train the conservative tree-path classifier.
 8. `08_classify_partials.R`: classify partial genomes where signal is sufficient.
 
 Milestone 1, 2, 3, and 4 scripts are runnable from the repository root:
@@ -38,5 +38,14 @@ Milestone 1, 2, 3, and 4 scripts are runnable from the repository root:
   `outputs/tables/validation_tip_summary.csv`,
   `outputs/tables/validation_fragment_summary.csv`, and
   `outputs/tables/validation_baseline_summary.csv`.
+- `07_train_classifier.R` trains an interpretable tree-path classifier from the
+  selected marker panel or full informative-site catalogue, performs
+  training-genome internal sanity checks, and writes
+  `outputs/models/wssv_classifier.rds`,
+  `outputs/tables/classifier_training_summary.csv`,
+  `outputs/tables/classifier_tip_predictions.csv`, and, when compact enough,
+  `outputs/tables/classifier_node_evidence.csv`. These predictions are
+  training-set checks, not independent validation.
 
-Later-stage scripts remain placeholders until their milestones begin.
+Later-stage partial-genome classification remains a placeholder until its
+milestone begins.
