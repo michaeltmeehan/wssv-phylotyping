@@ -1,0 +1,21 @@
+paths:
+  alignment: "data/raw/alignment/41seqscollagen_Edited.fasta"
+  tree: "data/raw/tree/41SEQSUPDATEDEDITEDMCC"
+  partials: "data/raw/partials/"
+  processed: "data/processed/"
+  outputs: "outputs/"
+
+analysis:
+  min_clade_size: 2
+  max_clade_frac: 0.95
+  min_total_obs: 30
+  min_side_obs: 2
+  min_site_maf: 2
+  min_gain_norm: 0.5
+  chunk_size: 5000
+  candidate_window_sizes:
+    - 300
+    - 500
+    - 1000
+    - 2000
+

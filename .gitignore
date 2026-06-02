@@ -1,0 +1,59 @@
+# R session and project files
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+*.Rproj
+
+# R package/build artifacts
+.Rcheck/
+*.tar.gz
+*.zip
+NAMESPACE
+man/
+
+# renv/local libraries
+renv/library/
+renv/staging/
+.renv/
+
+# Cache and temporary files
+.cache/
+cache/
+tmp/
+temp/
+*.log
+*.tmp
+
+# Serialized/generated R objects
+*.rds
+*.RDS
+*.rda
+*.RData
+
+# Raw and processed data contents
+data/raw/alignment/*
+!data/raw/alignment/README.md
+data/raw/tree/*
+!data/raw/tree/README.md
+data/raw/partials/*
+!data/raw/partials/README.md
+data/raw/metadata/*
+!data/raw/metadata/README.md
+data/processed/*
+!data/processed/.gitkeep
+
+# Generated outputs
+outputs/tables/*
+!outputs/tables/.gitkeep
+outputs/figures/*
+!outputs/figures/.gitkeep
+outputs/models/*
+!outputs/models/.gitkeep
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
