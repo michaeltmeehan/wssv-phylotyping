@@ -98,6 +98,20 @@ panel_size_subset <- function(panel_summary, sizes = c(1L, 2L, 3L, 5L, 10L)) {
   panel_summary[panel_summary$panel_size %in% sizes, , drop = FALSE]
 }
 
+opportunistic_assigned_site_summary <- function(site_summary) {
+  if (is.null(site_summary) || nrow(site_summary) == 0L) {
+    return(site_summary)
+  }
+  if (!"assigned_status" %in% names(site_summary)) {
+    return(site_summary)
+  }
+  assigned <- site_summary[site_summary$assigned_status == "resolved_opportunistic", , drop = FALSE]
+  if (nrow(assigned) > 0L) {
+    return(assigned)
+  }
+  site_summary
+}
+
 write_report_extract <- function(x, path, columns = NULL, n = NULL) {
   if (is.null(x)) {
     return(FALSE)

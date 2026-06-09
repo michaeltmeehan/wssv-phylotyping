@@ -489,6 +489,8 @@ classify_mapped_partials <- function(mapped_partials, classifier,
       panel_classifications = empty,
       opportunistic_classifications = empty,
       opportunistic_node_evidence = empty_partial_opportunistic_node_evidence_table(),
+      opportunistic_site_evidence = empty_partial_opportunistic_site_evidence_table(),
+      opportunistic_site_summary = empty_partial_opportunistic_site_summary_table(),
       region_diagnostics = empty_partial_region_diagnostics_table()
     ))
   }
@@ -506,6 +508,8 @@ classify_mapped_partials <- function(mapped_partials, classifier,
       panel_classifications = panel$classifications,
       opportunistic_classifications = empty,
       opportunistic_node_evidence = empty_partial_opportunistic_node_evidence_table(),
+      opportunistic_site_evidence = empty_partial_opportunistic_site_evidence_table(),
+      opportunistic_site_summary = empty_partial_opportunistic_site_summary_table(),
       region_diagnostics = empty_partial_region_diagnostics_table()
     ))
   }
@@ -527,6 +531,8 @@ classify_mapped_partials <- function(mapped_partials, classifier,
       panel_classifications = panel$classifications,
       opportunistic_classifications = opportunistic$classifications,
       opportunistic_node_evidence = opportunistic$node_evidence,
+      opportunistic_site_evidence = opportunistic$site_evidence,
+      opportunistic_site_summary = opportunistic$site_summary,
       region_diagnostics = opportunistic$region_diagnostics
     ))
   }
@@ -543,6 +549,8 @@ classify_mapped_partials <- function(mapped_partials, classifier,
     panel_classifications = panel$classifications,
     opportunistic_classifications = opportunistic$classifications,
     opportunistic_node_evidence = opportunistic$node_evidence,
+    opportunistic_site_evidence = opportunistic$site_evidence,
+    opportunistic_site_summary = opportunistic$site_summary,
     region_diagnostics = opportunistic$region_diagnostics
   )
 }
@@ -621,6 +629,7 @@ classify_mapped_partials_opportunistic <- function(mapped_partials, classifier,
   rows <- vector("list", nrow(mapped_partials))
   evidence_rows <- list()
   diagnostic_rows <- vector("list", nrow(mapped_partials))
+  site_evidence_rows <- list()
 
   for (i in seq_len(nrow(mapped_partials))) {
     record <- mapped_partials[i, , drop = FALSE]
@@ -687,11 +696,196 @@ classify_mapped_partials_opportunistic <- function(mapped_partials, classifier,
     }
   }
 
+  classifications <- do.call(rbind, rows)
+  for (i in seq_len(nrow(mapped_partials))) {
+    ev <- build_partial_opportunistic_site_evidence(
+      mapped_partials[i, , drop = FALSE],
+      classifications[i, , drop = FALSE],
+      opportunistic_classifier
+    )
+    if (nrow(ev) > 0L) {
+      site_evidence_rows[[length(site_evidence_rows) + 1L]] <- ev
+    }
+  }
+  site_evidence <- if (length(site_evidence_rows) > 0L) {
+    do.call(rbind, site_evidence_rows)
+  } else {
+    empty_partial_opportunistic_site_evidence_table()
+  }
+
   list(
-    classifications = do.call(rbind, rows),
+    classifications = classifications,
     node_evidence = if (length(evidence_rows) > 0L) do.call(rbind, evidence_rows) else empty_partial_opportunistic_node_evidence_table(),
+    site_evidence = site_evidence,
+    site_summary = summarise_partial_opportunistic_site_evidence(site_evidence, classifications),
     region_diagnostics = do.call(rbind, diagnostic_rows)
   )
+}
+
+build_partial_opportunistic_site_evidence <- function(record, classification,
+                                                      opportunistic_classifier,
+                                                      reference_sequence = NULL) {
+  empty <- empty_partial_opportunistic_site_evidence_table()
+  if (nrow(record) == 0L || !isTRUE(record$mapped[[1L]])) {
+    return(empty)
+  }
+  rules <- opportunistic_classifier$rules
+  if (nrow(rules) == 0L) {
+    return(empty)
+  }
+  interval_rules <- rules[
+    rules$site >= record$mapped_start[[1L]] &
+      rules$site <= record$mapped_end[[1L]],
+    ,
+    drop = FALSE
+  ]
+  if (nrow(interval_rules) == 0L) {
+    return(empty)
+  }
+
+  x <- encode_classifier_query(record$mapped_sequence[[1L]])
+  interval_rules <- interval_rules[interval_rules$site <= length(x), , drop = FALSE]
+  query_code <- x[interval_rules$site]
+  observed <- query_code != 0L
+  if (!any(observed)) {
+    return(empty)
+  }
+  interval_rules <- interval_rules[observed, , drop = FALSE]
+  query_code <- query_code[observed]
+  query_base <- base_code_to_allele(query_code)
+  supports <- ifelse(
+    interval_rules$direction == "clade",
+    query_code == interval_rules$allele_code,
+    query_code != interval_rules$allele_code
+  )
+
+  assigned_node <- as.character(classification$assigned_node[[1L]])
+  if (is.na(assigned_node) || assigned_node == "") {
+    assigned_node <- NA_character_
+  }
+  node_id <- as.character(interval_rules$node_id)
+  supports_assigned_node <- !is.na(assigned_node) & node_id == assigned_node & supports
+  supports_assigned_path <- if (is.na(assigned_node)) {
+    rep(NA, length(node_id))
+  } else {
+    supports & nodes_nested(assigned_node, node_id, opportunistic_classifier$target_mask)
+  }
+  contradicts_assigned_node <- !is.na(assigned_node) & node_id == assigned_node & !supports
+  on_assigned_path <- if (is.na(assigned_node)) {
+    rep(NA, length(node_id))
+  } else {
+    nodes_nested(assigned_node, node_id, opportunistic_classifier$target_mask)
+  }
+  role <- ifelse(
+    supports_assigned_node,
+    "supporting",
+    ifelse(!is.na(on_assigned_path) & on_assigned_path & supports, "supporting_path",
+      ifelse(supports, "off_path", "uninformative_observed")
+    )
+  )
+  site_reason <- ifelse(
+    supports,
+    "query base matches this node rule",
+    "query base does not match this node rule"
+  )
+  if (any(interval_rules$direction == "outside")) {
+    site_reason[interval_rules$direction == "outside" & supports] <- "query base differs from outside-directed informative allele"
+    site_reason[interval_rules$direction == "outside" & !supports] <- "query base matches outside-directed informative allele"
+  }
+  reference_base <- rep(NA_character_, nrow(interval_rules))
+  if (!is.null(reference_sequence)) {
+    ref <- strsplit(toupper(reference_sequence), "", fixed = TRUE)[[1L]]
+    ok <- interval_rules$site <= length(ref)
+    reference_base[ok] <- ref[interval_rules$site[ok]]
+  }
+  assigned_label <- classification$assigned_node_label[[1L]]
+  if (length(assigned_label) == 0L || is.na(assigned_label) || assigned_label == "") {
+    assigned_label <- assigned_node
+  }
+  node_label <- if ("node_label" %in% names(interval_rules)) {
+    as.character(interval_rules$node_label)
+  } else {
+    node_id
+  }
+
+  out <- data.frame(
+    record_id = record$sequence_id[[1L]],
+    classification_mode = "opportunistic",
+    classification_source = classification$classification_source[[1L]],
+    mapped = as.logical(record$mapped[[1L]]),
+    mapping_mode = as.character(record$mapping_mode[[1L]]),
+    strand = as.character(record$mapping_strand[[1L]]),
+    alignment_start = as.integer(record$mapped_start[[1L]]),
+    alignment_end = as.integer(record$mapped_end[[1L]]),
+    alignment_site = as.integer(interval_rules$site),
+    query_base = query_base,
+    reference_base = reference_base,
+    node = node_id,
+    node_label = node_label,
+    node_allele = as.character(interval_rules$best_allele),
+    site_score = if ("normalized_gain" %in% names(interval_rules)) as.numeric(interval_rules$normalized_gain) else as.numeric(interval_rules$rule_weight),
+    site_weight = as.numeric(interval_rules$rule_weight),
+    supports_node = as.logical(supports),
+    supports_assigned_node = as.logical(supports_assigned_node),
+    supports_assigned_path = as.logical(supports_assigned_path),
+    contradicts_assigned_node = as.logical(contradicts_assigned_node),
+    assigned_node = assigned_node,
+    assigned_node_label = assigned_label,
+    assigned_status = as.character(classification$status[[1L]]),
+    evidence_role = role,
+    site_reason = site_reason,
+    stringsAsFactors = FALSE
+  )
+  out[order(out$alignment_site, out$node), names(empty), drop = FALSE]
+}
+
+summarise_partial_opportunistic_site_evidence <- function(site_evidence, classifications = NULL) {
+  empty <- empty_partial_opportunistic_site_summary_table()
+  if (is.null(classifications) || nrow(classifications) == 0L) {
+    return(empty)
+  }
+  rows <- lapply(seq_len(nrow(classifications)), function(i) {
+    cls <- classifications[i, , drop = FALSE]
+    ev <- site_evidence[site_evidence$record_id == cls$record_id[[1L]], , drop = FALSE]
+    supporting_assigned <- ev[!is.na(ev$supports_assigned_node) & ev$supports_assigned_node, , drop = FALSE]
+    supporting_path <- ev[!is.na(ev$supports_assigned_path) & ev$supports_assigned_path, , drop = FALSE]
+    off_path <- ev[ev$supports_node & (is.na(ev$supports_assigned_path) | !ev$supports_assigned_path), , drop = FALSE]
+    supported_ev <- ev[ev$supports_node, , drop = FALSE]
+    node_counts <- if (nrow(supported_ev) == 0L) {
+      data.frame(node = character(), count = integer())
+    } else {
+      counts <- aggregate(alignment_site ~ node, supported_ev, function(x) length(unique(x)))
+      names(counts) <- c("node", "count")
+      counts[order(-counts$count, counts$node), , drop = FALSE]
+    }
+    top_nodes <- if (nrow(node_counts) == 0L) "" else {
+      paste(utils::head(paste0(node_counts$node, ":", node_counts$count), 5L), collapse = ";")
+    }
+    interpretation <- if (nrow(ev) == 0L) {
+      "no observed scored SNP evidence in mapped interval"
+    } else if (cls$status[[1L]] == "resolved_opportunistic") {
+      "opportunistic assignment supported by observed region-specific scored SNPs"
+    } else if (cls$status[[1L]] == "weak_support") {
+      "weak opportunistic signal; too few observed scored SNPs or insufficient support"
+    } else {
+      cls$reason[[1L]]
+    }
+    data.frame(
+      record_id = cls$record_id[[1L]],
+      assigned_node = cls$assigned_node[[1L]],
+      assigned_status = cls$status[[1L]],
+      unique_scored_sites_in_region = as.integer(cls$sites_available_in_region[[1L]]),
+      unique_observed_scored_sites = length(unique(ev$alignment_site)),
+      supporting_sites_for_assigned_node = length(unique(supporting_assigned$alignment_site)),
+      supporting_sites_for_assigned_path = length(unique(supporting_path$alignment_site)),
+      off_path_supporting_sites = length(unique(off_path$alignment_site)),
+      top_supported_nodes = top_nodes,
+      interpretation = interpretation,
+      stringsAsFactors = FALSE
+    )
+  })
+  out <- do.call(rbind, rows)
+  out[, names(empty), drop = FALSE]
 }
 
 extract_observed_scored_sites <- function(query, scored_rules) {
@@ -942,6 +1136,53 @@ empty_partial_opportunistic_node_evidence_table <- function() {
     support_margin = numeric(),
     is_on_assigned_path = logical(),
     evidence_summary = character(),
+    stringsAsFactors = FALSE
+  )
+}
+
+empty_partial_opportunistic_site_evidence_table <- function() {
+  data.frame(
+    record_id = character(),
+    classification_mode = character(),
+    classification_source = character(),
+    mapped = logical(),
+    mapping_mode = character(),
+    strand = character(),
+    alignment_start = integer(),
+    alignment_end = integer(),
+    alignment_site = integer(),
+    query_base = character(),
+    reference_base = character(),
+    node = character(),
+    node_label = character(),
+    node_allele = character(),
+    site_score = numeric(),
+    site_weight = numeric(),
+    supports_node = logical(),
+    supports_assigned_node = logical(),
+    supports_assigned_path = logical(),
+    contradicts_assigned_node = logical(),
+    assigned_node = character(),
+    assigned_node_label = character(),
+    assigned_status = character(),
+    evidence_role = character(),
+    site_reason = character(),
+    stringsAsFactors = FALSE
+  )
+}
+
+empty_partial_opportunistic_site_summary_table <- function() {
+  data.frame(
+    record_id = character(),
+    assigned_node = character(),
+    assigned_status = character(),
+    unique_scored_sites_in_region = integer(),
+    unique_observed_scored_sites = integer(),
+    supporting_sites_for_assigned_node = integer(),
+    supporting_sites_for_assigned_path = integer(),
+    off_path_supporting_sites = integer(),
+    top_supported_nodes = character(),
+    interpretation = character(),
     stringsAsFactors = FALSE
   )
 }

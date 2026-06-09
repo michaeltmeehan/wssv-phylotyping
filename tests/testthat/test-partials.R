@@ -506,6 +506,73 @@ test_that("opportunistic mode classifies a partial outside the selected panel", 
   expect_true(nrow(out$opportunistic_node_evidence) > 0L)
 })
 
+test_that("toy mapped partial with one scored site produces one site-evidence row", {
+  classifier <- make_partial_panel_test_classifier()
+  full_scores <- data.frame(
+    node_id = "11",
+    site = 4L,
+    best_allele = "A",
+    direction = "clade",
+    normalized_gain = 1
+  )
+  records <- data.frame(
+    sequence_id = "one-site",
+    source_file = "synthetic.fa",
+    header = "one-site",
+    accession = NA_character_,
+    sequence = "---A",
+    length = 4L,
+    stringsAsFactors = FALSE
+  )
+  mapped <- map_partial_sequences(records, alignment_length = 4L, mapping_mode = "aligned_full_length")
+
+  out <- classify_mapped_partials(
+    mapped,
+    classifier,
+    classification_mode = "opportunistic",
+    site_node_scores = full_scores,
+    opportunistic_settings = list(min_observed_informative_sites = 1L)
+  )
+
+  expect_equal(nrow(out$opportunistic_site_evidence), 1L)
+  expect_equal(out$opportunistic_site_evidence$alignment_site, 4L)
+  expect_true(out$opportunistic_site_evidence$supports_assigned_node)
+  expect_equal(out$opportunistic_site_summary$unique_observed_scored_sites, out$classifications$observed_informative_sites)
+})
+
+test_that("toy mapped partial with several scored sites produces expected site-evidence rows", {
+  classifier <- make_partial_panel_test_classifier()
+  full_scores <- data.frame(
+    node_id = c("10", "11", "12"),
+    site = c(2L, 4L, 2L),
+    best_allele = c("A", "A", "C"),
+    direction = c("clade", "clade", "clade"),
+    normalized_gain = c(1, 1, 1)
+  )
+  records <- data.frame(
+    sequence_id = "several-sites",
+    source_file = "synthetic.fa",
+    header = "several-sites",
+    accession = NA_character_,
+    sequence = "AA-A",
+    length = 4L,
+    stringsAsFactors = FALSE
+  )
+  mapped <- map_partial_sequences(records, alignment_length = 4L, mapping_mode = "aligned_full_length")
+
+  out <- classify_mapped_partials(
+    mapped,
+    classifier,
+    classification_mode = "opportunistic",
+    site_node_scores = full_scores,
+    opportunistic_settings = list(min_observed_informative_sites = 1L)
+  )
+
+  expect_equal(nrow(out$opportunistic_site_evidence), 3L)
+  expect_equal(length(unique(out$opportunistic_site_evidence$alignment_site)), 2L)
+  expect_equal(out$opportunistic_site_summary$unique_observed_scored_sites, out$classifications$observed_informative_sites)
+})
+
 test_that("opportunistic mode reports no informative sites when interval has no scored SNPs", {
   classifier <- make_partial_panel_test_classifier()
   full_scores <- data.frame(
@@ -530,6 +597,8 @@ test_that("opportunistic mode reports no informative sites when interval has no 
 
   expect_equal(out$classifications$status, "no_informative_sites")
   expect_equal(out$classifications$sites_available_in_region, 0L)
+  expect_equal(nrow(out$opportunistic_site_evidence), 0L)
+  expect_named(out$opportunistic_site_evidence, names(empty_partial_opportunistic_site_evidence_table()))
 })
 
 test_that("ambiguous bases at opportunistic informative sites are ignored", {
@@ -567,6 +636,74 @@ test_that("ambiguous bases at opportunistic informative sites are ignored", {
   expect_equal(out$classifications$status, "no_observed_informative_sites")
   expect_equal(out$classifications$sites_available_in_region, 1L)
   expect_equal(out$classifications$observed_informative_sites, 0L)
+  expect_equal(nrow(out$opportunistic_site_evidence), 0L)
+  expect_named(out$opportunistic_site_evidence, names(empty_partial_opportunistic_site_evidence_table()))
+})
+
+test_that("one site supporting multiple nodes is represented explicitly", {
+  classifier <- make_partial_panel_test_classifier()
+  full_scores <- data.frame(
+    node_id = c("10", "11"),
+    site = c(4L, 4L),
+    best_allele = c("A", "A"),
+    direction = c("clade", "clade"),
+    normalized_gain = c(1, 1)
+  )
+  records <- data.frame(
+    sequence_id = "multi-node-site",
+    source_file = "synthetic.fa",
+    header = "multi-node-site",
+    accession = NA_character_,
+    sequence = "---A",
+    length = 4L,
+    stringsAsFactors = FALSE
+  )
+  mapped <- map_partial_sequences(records, alignment_length = 4L, mapping_mode = "aligned_full_length")
+
+  out <- classify_mapped_partials(
+    mapped,
+    classifier,
+    classification_mode = "opportunistic",
+    site_node_scores = full_scores,
+    opportunistic_settings = list(min_observed_informative_sites = 1L)
+  )
+
+  expect_equal(nrow(out$opportunistic_site_evidence), 2L)
+  expect_equal(length(unique(out$opportunistic_site_evidence$alignment_site)), 1L)
+  expect_equal(out$classifications$observed_informative_sites, 1L)
+  expect_equal(out$opportunistic_site_summary$unique_observed_scored_sites, 1L)
+})
+
+test_that("site-level evidence row counts agree with classification summaries where expected", {
+  classifier <- make_partial_panel_test_classifier()
+  full_scores <- data.frame(
+    node_id = c("10", "11"),
+    site = c(2L, 4L),
+    best_allele = c("A", "A"),
+    direction = c("clade", "clade"),
+    normalized_gain = c(1, 1)
+  )
+  records <- data.frame(
+    sequence_id = "summary-match",
+    source_file = "synthetic.fa",
+    header = "summary-match",
+    accession = NA_character_,
+    sequence = "AA-A",
+    length = 4L,
+    stringsAsFactors = FALSE
+  )
+  mapped <- map_partial_sequences(records, alignment_length = 4L, mapping_mode = "aligned_full_length")
+
+  out <- classify_mapped_partials(
+    mapped,
+    classifier,
+    classification_mode = "opportunistic",
+    site_node_scores = full_scores,
+    opportunistic_settings = list(min_observed_informative_sites = 1L)
+  )
+
+  expect_equal(length(unique(out$opportunistic_site_evidence$alignment_site)), out$classifications$observed_informative_sites)
+  expect_equal(out$opportunistic_site_summary$supporting_sites_for_assigned_node, out$classifications$supporting_sites)
 })
 
 test_that("panel classification mode preserves selected-panel behavior", {

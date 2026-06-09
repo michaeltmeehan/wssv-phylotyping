@@ -38,6 +38,8 @@ tables <- list(
   partial_classifications_panel = read_optional_output(table_dir, "partial_classifications_panel"),
   partial_classifications_opportunistic = read_optional_output(table_dir, "partial_classifications_opportunistic"),
   partial_opportunistic_node_evidence = read_optional_output(table_dir, "partial_opportunistic_node_evidence"),
+  partial_opportunistic_site_evidence = read_optional_output(table_dir, "partial_opportunistic_site_evidence"),
+  partial_opportunistic_site_summary = read_optional_output(table_dir, "partial_opportunistic_site_summary"),
   partial_region_diagnostics = read_optional_output(table_dir, "partial_region_diagnostics")
 )
 
@@ -244,6 +246,22 @@ lines <- c(
   "Opportunistic status counts:",
   "",
   table_or_note(status_counts(data$partial_classifications_opportunistic), missing_note = missing_note("partial_classifications_opportunistic")),
+  "",
+  "### Opportunistic Site-Level Evidence",
+  "",
+  paste0("- Site-evidence rows: ", safe_nrow(data$partial_opportunistic_site_evidence)),
+  paste0("- Records with observed site evidence: ", safe_unique(data$partial_opportunistic_site_evidence, "record_id")),
+  "",
+  "Per-record opportunistic SNP evidence summary:",
+  "",
+  table_or_note(
+    opportunistic_assigned_site_summary(data$partial_opportunistic_site_summary),
+    c("record_id", "assigned_node", "assigned_status", "unique_observed_scored_sites", "supporting_sites_for_assigned_node", "supporting_sites_for_assigned_path", "off_path_supporting_sites", "top_supported_nodes", "interpretation"),
+    n = 20L,
+    missing_note = missing_note("partial_opportunistic_site_summary")
+  ),
+  "",
+  "Each row in `partial_opportunistic_site_evidence.csv` represents one observed scored SNP joined to one node rule, so one alignment site can appear in multiple rows when it contributes evidence to multiple nodes. Opportunistic classifications are region-dependent and are not equivalent to validation of the designed marker panel.",
   "",
   "Mapped/unmapped counts:",
   "",
