@@ -48,13 +48,16 @@ Milestone scripts are runnable from the repository root:
   `outputs/tables/classifier_node_evidence.csv`. These predictions are
   training-set checks, not independent validation.
 - `08_classify_partials.R` reads external partial FASTA files from the configured
-  raw partial input directory, conservatively maps aligned full-length records
-  or exact reference substrings to alignment coordinates, classifies mapped
-  records with the trained classifier, and writes
-  `outputs/tables/partial_classifications.csv` plus
-  `outputs/tables/partial_node_evidence.csv` when node evidence is available.
-  If no partial FASTA files are present, it writes an empty well-formed
-  classification table.
+  raw partial input directory, conservatively maps aligned full-length records,
+  exact reference substrings, or accepted local alignments to alignment
+  coordinates, and classifies mapped records in configured `panel`,
+  `opportunistic`, or `auto` mode. Panel mode preserves the trained selected
+  panel classifier; opportunistic mode uses all scored informative SNPs in each
+  mapped interval; auto mode falls back to opportunistic mode only when panel
+  sites are not observed. It writes `outputs/tables/partial_classifications.csv`,
+  separate panel/opportunistic classification tables, opportunistic node
+  evidence, and interval diagnostics. If no partial FASTA files are present, it
+  writes empty well-formed classification tables.
 - `09_generate_report.R` reads existing processed objects and output tables,
   writes `outputs/reports/wssv_phylotyping_report.md`, and writes optional
   compact report extract tables under `outputs/tables/`. Missing upstream

@@ -82,5 +82,16 @@ analysis:
       - "fasta"
       - "fna"
     mapping_mode: "auto"
+    classification_mode: "auto"
+    pairwise_local:
+      min_identity: 0.85
+      min_query_coverage: 0.6
+      min_aligned_length: 20
+      gap_opening: -10
+      gap_extension: -0.5
     min_observed_informative_sites: 1
+    min_support: 0.8
+    min_support_margin: 0.05
+    conflict_support_threshold: 0.2
+    use_weighted_support: true
     write_unresolved_evidence: false

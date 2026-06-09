@@ -14,10 +14,15 @@ The `R/` directory will hold reusable functions shared by the numbered workflow 
 - `classifier.R`: conservative tree-path classifier training, evidence, prediction,
   and save/load helpers.
 - `partials.R`: partial FASTA ingestion, conservative coordinate mapping,
-  partial encoding, classifier prediction, and per-node evidence helpers.
+  optional local-alignment mapping, partial encoding, panel and opportunistic
+  partial-genome classification, interval diagnostics, and per-node evidence
+  helpers.
 - `script_utils.R`: small shared helpers used by numbered workflow scripts.
 - `plotting.R`: shared plotting helpers.
 
 Milestones 0-6 are implemented through conservative partial-genome
-classification with explicit unmapped, weak, conflicting, unresolved, and
-no-informative-site outcomes.
+classification with explicit unmapped, weak, conflicting, unresolved,
+no-observed-signal, and no-informative-site outcomes. Partial classification
+supports panel, opportunistic, and auto modes; opportunistic classifications use
+all scored informative SNPs within each mapped interval and are reported
+separately from designed-panel classifier calls.
