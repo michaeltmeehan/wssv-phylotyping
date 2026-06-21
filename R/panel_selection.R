@@ -1,3 +1,7 @@
+#' Filter candidate windows before greedy panel selection.
+#'
+#' Applies student-tunable constraints such as minimum informative SNPs, missing
+#' fraction, permitted widths, and optional near-duplicate removal.
 filter_candidate_windows <- function(window_summary,
                                      min_informative_snps = 1L,
                                      min_total_weighted_gain = 0,
@@ -39,6 +43,10 @@ filter_candidate_windows <- function(window_summary,
   out
 }
 
+#' Calculate each candidate window's node-level coverage score.
+#'
+#' Converts window-node summaries into a compact table used to estimate marginal
+#' gain while selecting complementary panel windows.
 calculate_window_node_coverage <- function(window_node_summary,
                                            retained_window_ids = NULL,
                                            score_col = "total_weighted_gain") {
@@ -113,6 +121,10 @@ calculate_marginal_gain <- function(candidate_window_ids,
   do.call(rbind, rows)
 }
 
+#' Greedily select complementary marker windows.
+#'
+#' At each step, choose the compatible remaining window with the largest
+#' marginal gain under overlap, distance, and repeated-node-credit settings.
 greedy_select_panel <- function(window_summary,
                                 node_coverage,
                                 max_panel_size = 10L,

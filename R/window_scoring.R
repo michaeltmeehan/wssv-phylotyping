@@ -1,3 +1,7 @@
+#' Generate fixed-width windows across the alignment.
+#'
+#' Windows are created for each requested width using either an explicit step,
+#' an overlap fraction, or non-overlapping defaults.
 generate_fixed_windows <- function(alignment_length, widths, step = NULL, overlap = NULL) {
   if (alignment_length < 1L) {
     stop("alignment_length must be positive.", call. = FALSE)
@@ -56,6 +60,10 @@ resolve_window_step <- function(width, step = NULL, overlap = NULL) {
   width
 }
 
+#' Generate windows centred on informative SNP coordinates.
+#'
+#' These windows supplement fixed tiling when the config enables
+#' analysis.windows.snp_centered.
 generate_snp_centered_windows <- function(sites, alignment_length, widths) {
   sites <- sort(unique(as.integer(sites)))
   sites <- sites[!is.na(sites) & sites >= 1L & sites <= alignment_length]
@@ -103,6 +111,10 @@ assign_snps_to_windows <- function(sites, windows) {
   do.call(rbind, rows)
 }
 
+#' Aggregate informative SNP scores by window and node.
+#'
+#' The output feeds panel selection by showing which nodes each window helps and
+#' how much weighted signal the window contributes.
 aggregate_window_node_scores <- function(windows, site_node_scores, informative_assignments = NULL) {
   if (is.null(informative_assignments)) {
     informative_assignments <- assign_snps_to_windows(site_node_scores$site, windows)

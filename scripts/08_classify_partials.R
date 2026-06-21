@@ -1,5 +1,16 @@
 #!/usr/bin/env Rscript
 
+# Stage 08: map external partial FASTA records to alignment coordinates and
+# classify them with the trained panel classifier and/or opportunistic SNP
+# evidence, depending on config.
+# Inputs: outputs/models/wssv_classifier.rds, data/processed/precomputed.rds,
+# optional site_node_scores for opportunistic/auto mode, raw partial FASTA files,
+# and analysis.partials settings, including reference_id, from config/config.yml.
+# Outputs: partial classification, evidence, site-evidence, and mapping
+# diagnostics tables under outputs/tables/.
+# Run directly after scripts/07_train_classifier.R when partial genomes are
+# available. It also writes empty well-formed tables if none are present.
+
 source("R/encoding.R")
 source("R/preprocess.R")
 source("R/classifier.R")
@@ -65,6 +76,7 @@ classifier <- load_classifier(classifier_path)
 
 partial_cfg <- value_or(config$analysis$partials, list())
 partial_dir <- value_or(partial_cfg$input_dir, value_or(config$paths$partials, "data/raw/partials/"))
+partial_reference_id <- value_or(partial_cfg$reference_id, "CN01_1994")
 extensions <- value_or(partial_cfg$fasta_extensions, partial_default_extensions)
 mapping_mode <- value_or(partial_cfg$mapping_mode, "auto")
 classification_mode <- value_or(partial_cfg$classification_mode, "panel")
@@ -118,7 +130,7 @@ if (nrow(partials) == 0L) {
   quit(save = "no", status = 0L)
 }
 
-reference_sequence <- reference_sequence_from_alignment(pre$aln_int)
+reference_sequence <- reference_sequence_from_alignment(pre$aln_int, reference_id = partial_reference_id)
 mapped <- map_partial_sequences(
   partials,
   alignment_length = ncol(pre$aln_int),

@@ -1,5 +1,14 @@
 #!/usr/bin/env Rscript
 
+# Stage 07: train the conservative tree-path classifier and run training-tip
+# sanity checks against the known MCC-tree paths.
+# Inputs: precomputed data, site_node_scores, selected_panel, and
+# analysis.classifier settings from config/config.yml.
+# Outputs: outputs/models/wssv_classifier.rds plus classifier_training_summary,
+# classifier_tip_predictions, and optional classifier_node_evidence tables.
+# Run directly after scripts/05_select_marker_panel.R; validation is strongly
+# recommended before interpreting the classifier.
+
 source("R/encoding.R")
 source("R/classifier.R")
 source("R/script_utils.R")

@@ -1,5 +1,11 @@
 #!/usr/bin/env Rscript
 
+# Stage 01: preprocess the configured whole-genome alignment and MCC tree.
+# Inputs: config/config.yml paths.alignment, paths.tree, analysis clade filters.
+# Outputs: data/processed/precomputed.rds with encoded alignment, pruned tree,
+# clade masks, node metadata, site map, and polymorphic-site coordinates.
+# Run directly from the repository root before all downstream stages.
+
 source("R/encoding.R")
 source("R/preprocess.R")
 source("R/tree_utils.R")

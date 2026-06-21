@@ -1,5 +1,14 @@
 #!/usr/bin/env Rscript
 
+# Stage 09: generate a lightweight Markdown report from existing pipeline
+# outputs. This script does not rerun analysis stages.
+# Inputs: data/processed/precomputed.rds when present, config/config.yml, and
+# any CSV/RDS tables already written under outputs/tables/.
+# Outputs: outputs/reports/wssv_phylotyping_report.md plus compact report_*.csv
+# extracts under outputs/tables/.
+# Run directly after any completed subset of stages; missing upstream outputs
+# are reported in the Markdown instead of being recomputed.
+
 source("R/reporting.R")
 
 if (!requireNamespace("yaml", quietly = TRUE)) {

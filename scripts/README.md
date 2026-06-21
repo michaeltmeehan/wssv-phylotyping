@@ -2,6 +2,7 @@
 
 The `scripts/` directory contains numbered entry-point scripts for the staged workflow:
 
+0. `run_all.R`: convenience wrapper that runs the numbered workflow from `01` through `09`.
 1. `01_preprocess_alignment_tree.R`: prepare alignment, tree, coordinate, and clade objects.
 2. `02_score_snps.R`: score SNPs against MCC-tree clades.
 3. `03_summarise_sites.R`: summarize and rank informative sites.
@@ -14,6 +15,9 @@ The `scripts/` directory contains numbered entry-point scripts for the staged wo
 
 Milestone scripts are runnable from the repository root:
 
+- `run_all.R` executes the full baseline workflow in dependency order. Use this
+  when you want a single command for a configured run:
+  `Rscript scripts/run_all.R`.
 - `01_preprocess_alignment_tree.R` reads configured raw inputs, matches tree
   tips to alignment names, encodes bases, derives eligible node target masks,
   and writes `data/processed/precomputed.rds`.

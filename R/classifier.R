@@ -1,5 +1,10 @@
 classifier_allele_codes <- c(A = 1L, C = 2L, G = 3L, T = 4L)
 
+#' Train the conservative tree-path classifier.
+#'
+#' Builds node-specific SNP rules from the selected panel or full informative
+#' catalogue, applies minimum rule-count filters, and stores classification
+#' thresholds used by complete and partial genome prediction.
 train_classifier <- function(aln_int, target_mask, node_metadata, site_node_scores,
                              selected_panel = NULL, use_selected_panel = TRUE,
                              panel_size = NULL, min_sites_per_node = 1L,
@@ -55,6 +60,10 @@ train_classifier <- function(aln_int, target_mask, node_metadata, site_node_scor
   )
 }
 
+#' Convert scored SNPs into classifier rules.
+#'
+#' Restricts rules to selected panel windows when requested and records allele,
+#' direction, coordinate, and rule weight for downstream evidence calculations.
 make_classifier_rules <- function(site_node_scores, selected_panel = NULL,
                                   use_selected_panel = TRUE, panel_size = NULL) {
   required <- c("node_id", "site", "best_allele", "direction")
@@ -134,6 +143,10 @@ encode_classifier_query <- function(query) {
   as.integer(codes)
 }
 
+#' Calculate support and conflict evidence for every classifier node.
+#'
+#' Evidence compares observed query alleles with each node's rules and returns
+#' weighted support/conflict fractions used by classify_tree_path().
 calculate_node_evidence <- function(query, classifier) {
   x <- encode_classifier_query(query)
   rules <- classifier$rules
@@ -168,6 +181,11 @@ calculate_node_evidence <- function(query, classifier) {
   merge(evidence, classifier$node_table, by = "node_id", all.y = TRUE, sort = FALSE)
 }
 
+#' Classify one complete or aligned query sequence along the tree path.
+#'
+#' Returns resolved, weak, conflicting, no-informative-sites, or unresolved
+#' status without assuming that a resolved training-set call is independent
+#' biological validation.
 classify_tree_path <- function(query, classifier, min_total_informative_sites = NULL,
                                min_support = NULL, max_conflict = NULL,
                                support_margin = NULL) {

@@ -1,3 +1,7 @@
+#' Find the best allele rule for one alignment column across eligible nodes.
+#'
+#' Used by SNP scoring to ask whether a nucleotide state is enriched inside or
+#' outside each target clade after applying observation and minor-allele filters.
 best_rule_for_site <- function(x, target_mask, min_total_obs, min_side_obs, min_site_maf) {
   observed <- x != 0L
   allele_totals <- tabulate(x[observed], nbins = 4L)
@@ -53,6 +57,10 @@ best_rule_for_site <- function(x, target_mask, min_total_obs, min_side_obs, min_
   )
 }
 
+#' Score one polymorphic site against all eligible clades.
+#'
+#' Returns one row for each node where the best allele rule improves over the
+#' clade-size baseline by at least the configured normalized-gain threshold.
 score_site <- function(site, x, target_mask, node_metadata, min_total_obs, min_side_obs,
                        min_site_maf, min_gain_norm) {
   rule <- best_rule_for_site(x, target_mask, min_total_obs, min_side_obs, min_site_maf)
@@ -91,6 +99,11 @@ score_site <- function(site, x, target_mask, node_metadata, min_total_obs, min_s
   merge(out, node_metadata, by = c("node_index", "node_id"), sort = FALSE)
 }
 
+#' Score many polymorphic SNP sites.
+#'
+#' This is the main stage-02 worker. It loops over candidate sites and combines
+#' all informative site-node rules used by downstream window scoring and the
+#' classifier.
 score_snp_sites <- function(aln_int, target_mask, node_metadata, sites,
                             min_total_obs, min_side_obs, min_site_maf,
                             min_gain_norm = 0.5, chunk_size = 5000L,

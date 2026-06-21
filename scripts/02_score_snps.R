@@ -1,5 +1,11 @@
 #!/usr/bin/env Rscript
 
+# Stage 02: score polymorphic SNPs against eligible MCC-tree clades.
+# Inputs: data/processed/precomputed.rds and analysis SNP-scoring thresholds.
+# Outputs: outputs/tables/site_node_scores.rds, one row per informative
+# site-node rule that passes the configured observation and gain filters.
+# Run directly after scripts/01_preprocess_alignment_tree.R.
+
 source("R/encoding.R")
 source("R/snp_scoring.R")
 

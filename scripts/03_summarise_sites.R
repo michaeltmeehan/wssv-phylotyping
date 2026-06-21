@@ -1,5 +1,11 @@
 #!/usr/bin/env Rscript
 
+# Stage 03: summarise informative SNP and node-level scoring results.
+# Inputs: data/processed/precomputed.rds and outputs/tables/site_node_scores.rds.
+# Outputs: outputs/tables/site_summary.csv and outputs/tables/node_summary.csv.
+# Uses the same config paths as upstream scripts; no new analysis thresholds.
+# Run directly after scripts/02_score_snps.R.
+
 source("R/snp_scoring.R")
 
 if (!requireNamespace("yaml", quietly = TRUE)) {

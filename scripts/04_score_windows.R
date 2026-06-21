@@ -1,5 +1,13 @@
 #!/usr/bin/env Rscript
 
+# Stage 04: build fixed and optional SNP-centred genomic windows, then
+# aggregate informative SNP scores into candidate marker-window summaries.
+# Inputs: data/processed/precomputed.rds, outputs/tables/site_node_scores.rds,
+# and analysis.windows settings from config/config.yml.
+# Outputs: candidate_windows, window_summary, and window_node_summary as CSV/RDS
+# files under outputs/tables/.
+# Run directly after scripts/02_score_snps.R.
+
 source("R/window_scoring.R")
 
 parse_window_steps <- function(steps) {

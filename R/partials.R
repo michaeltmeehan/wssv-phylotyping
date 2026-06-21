@@ -4,6 +4,10 @@ partial_default_extensions <- c("fa", "fas", "fasta", "fna")
   if (is.null(x)) y else x
 }
 
+#' Read all configured partial-genome FASTA files.
+#'
+#' Returns one row per FASTA record with sequence identifiers, source file,
+#' accession-like header parsing, and raw sequence text.
 read_partial_fastas <- function(input_dir, extensions = partial_default_extensions) {
   if (!dir.exists(input_dir)) {
     return(empty_partial_records())
@@ -93,6 +97,10 @@ reference_alignment_coordinate_map <- function(reference_sequence) {
   )
 }
 
+#' Map partial records to alignment coordinates.
+#'
+#' Supports aligned full-length records, exact reference substrings, pairwise
+#' local reference mapping, or auto mode in that order.
 map_partial_sequences <- function(partials, alignment_length, reference_sequence = NULL,
                                   mapping_mode = "auto",
                                   pairwise_local_thresholds = list()) {
@@ -474,6 +482,10 @@ encode_mapped_partials <- function(mapped_partials, alignment_length = NULL) {
   encoded
 }
 
+#' Classify mapped partial records.
+#'
+#' Runs panel, opportunistic, or auto classification and returns harmonised
+#' classification, evidence, site-evidence, and region-diagnostic tables.
 classify_mapped_partials <- function(mapped_partials, classifier,
                                      min_total_informative_sites = NULL,
                                      write_unresolved_evidence = FALSE,

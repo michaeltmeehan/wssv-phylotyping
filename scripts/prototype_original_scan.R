@@ -1,3 +1,8 @@
+# Historical prototype: original exploratory SNP/window scan retained for
+# reference only. It predates the staged workflow and is not the recommended
+# entry point for routine runs or parameter tuning.
+# Inputs/outputs may not match config/config.yml or the numbered scripts.
+
 suppressPackageStartupMessages({
   library(ape)
   library(phangorn)

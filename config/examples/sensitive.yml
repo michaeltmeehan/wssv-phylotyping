@@ -1,0 +1,80 @@
+# Example sensitive parameter set.
+# Copy this file to config/config.yml before running. Review paths first.
+
+paths:
+  alignment: "data/raw/alignment/41seqscollagen_Edited.fasta"
+  tree: "data/raw/tree/41SEQSUPDATEDEDITEDMCC"
+  partials: "data/raw/partials/"
+  processed: "data/processed/"
+  outputs: "outputs/"
+
+analysis:
+  min_clade_size: 2
+  max_clade_frac: 0.95
+  # Lower total observation threshold admits more SNP rules for exploration.
+  min_total_obs: 25
+  min_side_obs: 2
+  min_site_maf: 2
+  # Lower gain threshold keeps weaker candidate SNPs; inspect conflicts carefully.
+  min_gain_norm: 0.4
+  chunk_size: 5000
+  candidate_window_sizes: [300, 500, 1000, 2000]
+  windows:
+    widths: [300, 500, 1000, 2000]
+    # More overlap creates more candidate windows around possible signal.
+    overlap: 0.6
+    min_informative_snps: 1
+    snp_centered:
+      enabled: true
+      # Adds wider SNP-centred windows to increase chances of capturing signal.
+      widths: [300, 500, 1000]
+  panel_selection:
+    panel_sizes: [1, 2, 3, 5, 10]
+    min_marginal_gain: 0
+    min_informative_snps: 1
+    min_total_weighted_gain: 0
+    max_missing_fraction: null
+    permitted_widths: null
+    # Allows some overlap so useful nearby windows are not excluded too early.
+    max_allowed_overlap: 0.25
+    min_distance: null
+    exclude_near_duplicates: false
+    cap_repeated_coverage: true
+    repeated_node_credit: 0
+  validation:
+    panel_sizes: [1, 2, 3, 5, 10]
+    fragment_lengths: [300, 500, 1000, 2000, 5000]
+    random_baseline_replicates: 10
+    min_informative_sites: 1
+    min_informative_nodes: 1
+    random_seed: 1
+  classifier:
+    min_sites_per_node: 1
+    min_total_informative_sites: 1
+    # Lower support, higher conflict tolerance, and no margin are permissive.
+    min_support: 0.7
+    max_conflict: 0.3
+    support_margin: 0
+    use_selected_panel: true
+    panel_size: null
+  partials:
+    input_dir: "data/raw/partials/"
+    # Use the same alignment row as the default config for partial coordinate mapping.
+    reference_id: "CN01_1994"
+    fasta_extensions: ["fa", "fas", "fasta", "fna"]
+    mapping_mode: "auto"
+    classification_mode: "auto"
+    pairwise_local:
+      # More permissive mapping can recover more partials but needs review.
+      min_identity: 0.8
+      min_query_coverage: 0.5
+      min_aligned_length: 20
+      gap_opening: -10
+      gap_extension: -0.5
+    min_observed_informative_sites: 1
+    # Match the sensitive classifier posture for opportunistic partial calls.
+    min_support: 0.7
+    min_support_margin: 0
+    conflict_support_threshold: 0.3
+    use_weighted_support: true
+    write_unresolved_evidence: false

@@ -1,5 +1,13 @@
 #!/usr/bin/env Rscript
 
+# Stage 05: greedily select complementary marker windows for requested panel
+# sizes and compare simple ranked-window alternatives.
+# Inputs: outputs/tables/window_summary.* and window_node_summary.*, plus
+# analysis.panel_selection settings from config/config.yml.
+# Outputs: selected_panel, selected_panel_steps, panel_node_coverage, and
+# panel_summary as CSV/RDS files under outputs/tables/.
+# Run directly after scripts/04_score_windows.R.
+
 source("R/panel_selection.R")
 source("R/script_utils.R")
 

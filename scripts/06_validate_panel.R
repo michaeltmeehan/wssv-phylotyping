@@ -1,5 +1,13 @@
 #!/usr/bin/env Rscript
 
+# Stage 06: validate how much complete-genome signal is retained by selected
+# panel sizes and by random/baseline fragment sets.
+# Inputs: precomputed data, site_node_scores, window_summary, selected_panel,
+# and analysis.validation settings from config/config.yml.
+# Outputs: validation_panel_summary, validation_tip_summary,
+# validation_fragment_summary, and validation_baseline_summary as CSV/RDS files.
+# Run directly after scripts/05_select_marker_panel.R.
+
 source("R/validation.R")
 source("R/script_utils.R")
 

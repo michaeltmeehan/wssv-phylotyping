@@ -1,3 +1,4 @@
+#' Validate and normalise marker-window coordinate tables.
 validate_windows <- function(windows, alignment_length = NULL) {
   required <- c("window_id", "start", "end")
   missing <- setdiff(required, names(windows))
@@ -112,6 +113,9 @@ make_matched_random_windows <- function(panel_windows, alignment_length, n_repli
   do.call(rbind, rows)
 }
 
+#' Count informative signal observed in masked or partial alignments.
+#'
+#' Used for complete-genome panel validation and synthetic fragment summaries.
 count_observed_signal <- function(partial_aln_int, site_node_scores, target_mask = NULL,
                                   min_informative_sites = 1L, min_informative_nodes = 1L) {
   tips <- rownames(partial_aln_int)
@@ -181,6 +185,7 @@ count_supported_true_nodes <- function(x, true_site_node_rows) {
   list(supported_nodes = length(unique(supported_rows$node_id)), deepest_supported_depth = depth)
 }
 
+#' Evaluate retained signal for a selected panel size across complete genomes.
 evaluate_panel_signal <- function(aln_int, windows, site_node_scores, target_mask = NULL,
                                   panel_size = nrow(windows), method = "selected_panel",
                                   replicate = NA_integer_, min_informative_sites = 1L,
