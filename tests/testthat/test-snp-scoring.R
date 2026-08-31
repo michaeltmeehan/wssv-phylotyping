@@ -38,3 +38,40 @@ test_that("SNP scoring finds a clade-marking allele", {
   expect_equal(best$total_observed, 5L)
   expect_equal(best$normalized_gain, 1)
 })
+
+test_that("stage 02 broad scores remain unchanged and target scores stay restricted", {
+  pre <- readRDS(test_path("../../data/processed/precomputed.rds"))
+  expected_all <- readRDS(test_path("../../outputs/tables/site_node_scores.rds"))
+
+  actual_all <- score_snp_sites(
+    aln_int = pre$aln_int,
+    target_mask = pre$all_clade_mask,
+    node_metadata = pre$all_node_metadata,
+    sites = pre$polymorphic_sites,
+    min_total_obs = pre$params$min_total_obs,
+    min_side_obs = pre$params$min_side_obs,
+    min_site_maf = pre$params$min_site_maf,
+    min_gain_norm = pre$params$min_gain_norm,
+    progress = FALSE
+  )
+
+  actual_targets <- score_snp_sites(
+    aln_int = pre$aln_int,
+    target_mask = pre$target_clade_mask,
+    node_metadata = pre$target_node_metadata,
+    sites = pre$polymorphic_sites,
+    min_total_obs = pre$params$min_total_obs,
+    min_side_obs = pre$params$min_side_obs,
+    min_site_maf = pre$params$min_site_maf,
+    min_gain_norm = pre$params$min_gain_norm,
+    progress = FALSE
+  )
+
+  score_order <- order(actual_all$site, actual_all$node_index)
+  actual_all <- actual_all[score_order, , drop = FALSE]
+  expected_all <- expected_all[order(expected_all$site, expected_all$node_index), , drop = FALSE]
+
+  expect_equal(actual_all[names(expected_all)], expected_all)
+  expect_true("posterior_support" %in% names(actual_all))
+  expect_true(all(actual_targets$node_id %in% pre$target_node_metadata$node_id))
+})

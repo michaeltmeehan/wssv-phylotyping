@@ -13,8 +13,10 @@ region-dependent assessment of arbitrary partial genomes.
 - Partial sequence metadata.
 - Reference coordinate mapping.
 - Trained classifier.
-- Full scored SNP table (`outputs/tables/site_node_scores.rds`) for
-  opportunistic classification.
+- Full scored SNP tables (`outputs/tables/site_node_scores_all.rds` and the
+  transitional alias `outputs/tables/site_node_scores.rds`) for opportunistic
+  classification. Future primer-panel work should draw from
+  `outputs/tables/site_node_scores_targets.rds`.
 
 ## Expected Outputs
 

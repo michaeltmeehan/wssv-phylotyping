@@ -16,7 +16,8 @@ For example, a SNP may help if most genomes inside a clade have `A` while genome
 
 Relevant outputs:
 
-- `outputs/tables/site_node_scores.rds`
+- `outputs/tables/site_node_scores_all.rds`
+- `outputs/tables/site_node_scores_targets.rds`
 - `outputs/tables/site_summary.csv`
 - `outputs/tables/node_summary.csv`
 

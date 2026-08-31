@@ -14,7 +14,9 @@ Create reproducible preprocessing objects and score SNPs by their ability to dis
 ## Expected Outputs
 
 - `data/processed/precomputed.rds`
-- `outputs/tables/site_node_scores.rds`
+- `outputs/tables/site_node_scores_all.rds`
+- `outputs/tables/site_node_scores_targets.rds`
+- `outputs/tables/site_node_scores.rds` (legacy alias for the full diagnostic set)
 - `outputs/tables/site_summary.csv`
 - `outputs/tables/node_summary.csv`
 

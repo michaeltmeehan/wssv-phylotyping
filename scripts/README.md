@@ -22,9 +22,12 @@ Milestone scripts are runnable from the repository root:
   tips to alignment names, encodes bases, derives the full diagnostic clade set
   plus the explicitly configured target clades, and writes
   `data/processed/precomputed.rds`.
-- `02_score_snps.R` scores polymorphic sites against eligible diagnostic clades
-  and writes
-  `outputs/tables/site_node_scores.rds`.
+- `02_score_snps.R` scores polymorphic sites twice: once against the full
+  diagnostic clade set and once against the restricted target clade set. It
+  writes `outputs/tables/site_node_scores_all.rds`,
+  `outputs/tables/site_node_scores_targets.rds`, and the transitional alias
+  `outputs/tables/site_node_scores.rds` for the full diagnostic set. Future
+  primer-panel design should use the target-specific output.
 - `03_summarise_sites.R` writes `outputs/tables/site_summary.csv` and
   `outputs/tables/node_summary.csv`.
 - `04_score_windows.R` generates fixed and optional SNP-centred windows from

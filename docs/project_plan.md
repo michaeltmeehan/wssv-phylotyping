@@ -31,7 +31,9 @@ Then score polymorphic sites by how well they distinguish eligible MCC-tree clad
 Primary outputs:
 
 - `data/processed/precomputed.rds`
-- `data/processed/site_node_scores.rds`
+- `outputs/tables/site_node_scores_all.rds`
+- `outputs/tables/site_node_scores_targets.rds`
+- `outputs/tables/site_node_scores.rds` (legacy alias for the full diagnostic set)
 - `outputs/tables/site_summary.csv`
 
 ## Stage 2: Window Scoring

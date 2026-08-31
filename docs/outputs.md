@@ -5,7 +5,9 @@ Generated files are written under `data/processed/` and `outputs/`. They are saf
 | Output | Created by | Contains | Intermediate or final | When to inspect | Safe to delete/regenerate |
 |---|---|---|---|---|---|
 | `data/processed/precomputed.rds` | Stage 01 | Encoded alignment, pruned tree, clade masks, node metadata, polymorphic sites. | Intermediate | After changing raw alignment/tree or clade filters. | Yes |
-| `outputs/tables/site_node_scores.rds` | Stage 02 | Informative SNP rules by site and node. | Intermediate | After changing SNP scoring thresholds. | Yes |
+| `outputs/tables/site_node_scores_all.rds` | Stage 02 | Informative SNP rules by site and node for the full diagnostic clade set. | Intermediate | After changing SNP scoring thresholds. | Yes |
+| `outputs/tables/site_node_scores_targets.rds` | Stage 02 | Informative SNP rules by site and node for the restricted target clade set. | Intermediate | After changing SNP scoring thresholds or target clades. | Yes |
+| `outputs/tables/site_node_scores.rds` | Stage 02 | Transitional alias of `site_node_scores_all.rds` kept for downstream compatibility. | Intermediate | During the migration period before downstream stages are repointed. | Yes |
 | `outputs/tables/site_summary.csv` | Stage 03 | Per-site score summaries. | Diagnostic/final summary | To find strongest SNPs and signal concentration. | Yes |
 | `outputs/tables/node_summary.csv` | Stage 03 | Per-node score summaries. | Diagnostic/final summary | To see which clades have informative SNPs. | Yes |
 | `outputs/tables/candidate_windows.csv` | Stage 04 | All generated candidate windows. | Intermediate | To check window count, widths, and coordinates. | Yes |
