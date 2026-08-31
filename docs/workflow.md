@@ -17,7 +17,7 @@ data/processed/precomputed.rds
 02_score_snps.R -> site_node_scores_all.rds, site_node_scores_targets.rds
         |
         v
-03_summarise_sites.R -> site_summary.csv, node_summary.csv
+03_summarise_sites.R -> site_summary_all.csv, node_summary_all.csv, site_summary_targets.csv, node_summary_targets.csv
         |
         v
 04_score_windows.R -> candidate_windows.csv, window_summary.csv, window_node_summary.csv
@@ -43,7 +43,7 @@ data/processed/precomputed.rds
 |---|---|---|---|
 | `scripts/01_preprocess_alignment_tree.R` | Reads the alignment and tree, keeps matching tips, encodes bases, finds polymorphic sites, builds the broad diagnostic clade masks, and resolves the explicitly configured target clades. | `config/config.yml`, `paths.alignment`, `paths.tree` | `data/processed/precomputed.rds` with `all_clade_mask`, `target_clade_mask`, `all_node_metadata`, and `target_node_metadata` |
 | `scripts/02_score_snps.R` | Scores each polymorphic SNP against the full diagnostic clade set and the restricted target clade set. | `precomputed.rds`, `analysis.min_*`, `analysis.chunk_size` | `outputs/tables/site_node_scores_all.rds`, `outputs/tables/site_node_scores_targets.rds`, legacy `outputs/tables/site_node_scores.rds` alias |
-| `scripts/03_summarise_sites.R` | Makes student-readable SNP and node summaries. | `precomputed.rds`, `site_node_scores.rds` | `site_summary.csv`, `node_summary.csv` |
+| `scripts/03_summarise_sites.R` | Makes student-readable SNP and node summaries for the full diagnostic set and restricted target set. | `precomputed.rds`, `site_node_scores_all.rds`, `site_node_scores_targets.rds` | `site_summary_all.csv`, `node_summary_all.csv`, `site_summary_targets.csv`, `node_summary_targets.csv` |
 | `scripts/04_score_windows.R` | Creates fixed and SNP-centred windows and aggregates SNP scores into window scores. | `site_node_scores.rds`, `analysis.windows` | `candidate_windows.csv`, `window_summary.csv`, `window_node_summary.csv` |
 | `scripts/05_select_marker_panel.R` | Filters windows and greedily selects complementary marker windows. | `window_summary.*`, `window_node_summary.*`, `analysis.panel_selection` | `selected_panel.csv`, `selected_panel_steps.csv`, `panel_node_coverage.csv`, `panel_summary.csv` |
 | `scripts/06_validate_panel.R` | Checks complete-genome signal retained by selected panels and random/baseline fragments. | `selected_panel.*`, `site_node_scores.*`, `analysis.validation` | `validation_panel_summary.csv`, `validation_tip_summary.csv`, `validation_fragment_summary.csv`, `validation_baseline_summary.csv` |

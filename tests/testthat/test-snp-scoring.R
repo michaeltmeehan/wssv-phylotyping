@@ -75,3 +75,70 @@ test_that("stage 02 broad scores remain unchanged and target scores stay restric
   expect_true("posterior_support" %in% names(actual_all))
   expect_true(all(actual_targets$node_id %in% pre$target_node_metadata$node_id))
 })
+
+test_that("stage 03 summaries split all and target clades with transparent ordering", {
+  site_map <- data.frame(
+    site = c(10L, 20L),
+    alignment_position = c(1001L, 1002L)
+  )
+  node_metadata <- data.frame(
+    node_index = c(1L, 2L),
+    node_id = c(11L, 12L),
+    posterior_support = c(0.95, 0.91),
+    clade_size = c(5L, 4L),
+    complement_size = c(10L, 11L),
+    depth = c(0.4, 0.8),
+    balance = c(0.5, 0.4),
+    weight = c(0.18, 0.10)
+  )
+  site_node_scores <- data.frame(
+    node_index = c(1L, 2L, 1L, 2L),
+    node_id = c(11L, 12L, 11L, 12L),
+    site = c(10L, 10L, 20L, 20L),
+    gain = c(0.30, 0.25, 0.85, 0.15),
+    normalized_gain = c(0.55, 0.60, 0.70, 0.20),
+    best_allele = c("A", "A", "G", "G"),
+    direction = c("clade", "outside", "clade", "outside"),
+    allele_count_inside = c(3L, 2L, 4L, 1L),
+    allele_count_outside = c(1L, 1L, 0L, 0L),
+    observed_inside = c(4L, 3L, 5L, 2L),
+    observed_outside = c(6L, 7L, 5L, 8L),
+    total_observed = c(10L, 10L, 10L, 10L),
+    weight = c(100, 100, 1, 1)
+  )
+
+  site_summary_all <- make_site_summary(
+    site_node_scores,
+    site_map = site_map,
+    n_tip = 12L,
+    helped_count_name = "nodes_helped"
+  )
+  site_summary_targets <- make_site_summary(
+    site_node_scores,
+    site_map = site_map,
+    n_tip = 12L,
+    helped_count_name = "target_clades_helped"
+  )
+  node_summary_targets <- make_node_summary(site_node_scores, node_metadata)
+
+  expect_equal(site_summary_all$site, c(20L, 10L))
+  expect_equal(site_summary_all$alignment_position, c(1002L, 1001L))
+  expect_true(site_summary_all$weighted_gain_sum[1] < site_summary_all$weighted_gain_sum[2])
+  expect_equal(site_summary_all$nodes_helped, c(2L, 2L))
+  expect_equal(site_summary_all$best_allele, c("G", "A"))
+  expect_equal(site_summary_all$best_direction, c("clade", "outside"))
+  expect_equal(site_summary_all$missing_sequences_mean, c(2, 2))
+  expect_true("legacy_weighted_gain_sum" %in% names(site_summary_all))
+
+  expect_equal(site_summary_targets$site, c(20L, 10L))
+  expect_equal(site_summary_targets$target_clades_helped, c(2L, 2L))
+  expect_true(all(site_summary_targets$best_normalized_gain >= site_summary_targets$normalized_gain_mean))
+
+  expect_equal(nrow(node_summary_targets), 2L)
+  expect_true(all(c("posterior_support", "clade_size", "complement_size", "depth") %in% names(node_summary_targets)))
+  expect_equal(node_summary_targets$node_id, c(11L, 12L))
+  expect_equal(node_summary_targets$informative_sites, c(2L, 2L))
+  expect_equal(node_summary_targets$best_site, c(20L, 10L))
+  expect_equal(node_summary_targets$best_raw_gain, c(0.85, 0.25))
+  expect_equal(node_summary_targets$best_normalized_gain, c(0.70, 0.60))
+})

@@ -22,6 +22,9 @@
 | MCC tree | Maximum clade credibility tree used as the reference tree for clade definitions. |
 | Support | Fraction of observed rule weight or count that agrees with a node. |
 | Conflict | Fraction of observed rule weight or count that disagrees with a node. |
+| Posterior support | Tree-level credibility for a clade or node, usually imported from the MCC tree annotations. It is phylogenetic metadata, not SNP evidence. |
+| SNP discriminatory gain | The improvement a SNP rule provides over the clade-size baseline when distinguishing one clade from the rest of the tree. |
+| Classifier evidence | Later-stage support accumulated by the tree-path classifier from selected SNP rules. It is distinct from posterior support and from raw SNP gain. |
 | Support margin | Gap between the best supported assignment and competing incompatible evidence. |
 | Opportunistic classification | Partial-genome classification using all scored SNPs observed in the mapped interval rather than only the selected marker panel. |
 | Baseline run | The unchanged reference run used to compare tuning experiments. |

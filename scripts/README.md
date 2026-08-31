@@ -28,8 +28,13 @@ Milestone scripts are runnable from the repository root:
   `outputs/tables/site_node_scores_targets.rds`, and the transitional alias
   `outputs/tables/site_node_scores.rds` for the full diagnostic set. Future
   primer-panel design should use the target-specific output.
-- `03_summarise_sites.R` writes `outputs/tables/site_summary.csv` and
-  `outputs/tables/node_summary.csv`.
+- `03_summarise_sites.R` writes
+  `outputs/tables/site_summary_all.csv`,
+  `outputs/tables/node_summary_all.csv`,
+  `outputs/tables/site_summary_targets.csv`,
+  `outputs/tables/node_summary_targets.csv`, plus the legacy compatibility
+  aliases `outputs/tables/site_summary.csv` and `outputs/tables/node_summary.csv`
+  for the full diagnostic summaries.
 - `04_score_windows.R` generates fixed and optional SNP-centred windows from
   configured widths, aggregates site-node scores, and writes
   `outputs/tables/candidate_windows.csv`,

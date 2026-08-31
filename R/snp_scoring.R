@@ -132,61 +132,140 @@ score_snp_sites <- function(aln_int, target_mask, node_metadata, sites,
   do.call(rbind, scores)
 }
 
-summarise_site_scores <- function(site_node_scores) {
-  if (nrow(site_node_scores) == 0L) {
-    return(data.frame())
-  }
+# Posterior support, SNP discriminatory gain, and classifier evidence are
+# separate concepts in this repository. Posterior support comes from the tree
+# metadata and describes phylogenetic credibility. The summaries below rank SNP
+# discriminatory gain only; later classifier support is derived elsewhere from
+# the selected rules and should not be conflated with tree support.
 
-  aggregate(
-    cbind(
-      nodes_helped = rep(1, nrow(site_node_scores)),
-      gain_max = site_node_scores$gain,
-      normalized_gain_max = site_node_scores$normalized_gain,
-      weighted_gain_sum = site_node_scores$weight * site_node_scores$normalized_gain
-    ) ~ site,
-    data = site_node_scores,
-    FUN = function(x) c(sum = sum(x), max = max(x), mean = mean(x))[1L]
-  )
+best_summary_row <- function(x) {
+  x[order(-x$normalized_gain, -x$gain, x$node_id, x$node_index), , drop = FALSE][1L, ]
 }
 
-make_site_summary <- function(site_node_scores) {
+make_site_summary <- function(site_node_scores, site_map = NULL, n_tip = NULL,
+                              helped_count_name = "nodes_helped") {
   if (nrow(site_node_scores) == 0L) {
-    return(data.frame(
-      site = integer(), nodes_helped = integer(), gain_max = numeric(),
-      gain_mean = numeric(), normalized_gain_max = numeric(),
-      normalized_gain_mean = numeric(), weighted_gain_sum = numeric()
-    ))
+    out <- data.frame(
+      site = integer(),
+      alignment_position = integer(),
+      gain_max = numeric(),
+      gain_mean = numeric(),
+      normalized_gain_max = numeric(),
+      normalized_gain_mean = numeric(),
+      observed_sequences_min = integer(),
+      observed_sequences_mean = numeric(),
+      observed_sequences_max = integer(),
+      best_node_id = integer(),
+      best_allele = character(),
+      best_direction = character(),
+      best_raw_gain = numeric(),
+      best_normalized_gain = numeric(),
+      informative_nodes = integer(),
+      stringsAsFactors = FALSE
+    )
+    out[[helped_count_name]] <- integer()
+    out$weighted_gain_sum <- numeric()
+    out$legacy_weighted_gain_sum <- numeric()
+    out$missing_sequences_mean <- numeric()
+    out$missing_sequences_min <- integer()
+    out$missing_sequences_max <- integer()
+    return(out)
   }
 
   rows <- split(site_node_scores, site_node_scores$site)
   out <- do.call(rbind, lapply(rows, function(x) {
+    best_row <- best_summary_row(x)
+    alignment_position <- best_row$site
+    if (!is.null(site_map) && all(c("site", "alignment_position") %in% names(site_map))) {
+      mapped <- site_map$alignment_position[match(best_row$site, site_map$site)]
+      if (!is.na(mapped)) {
+        alignment_position <- mapped
+      }
+    }
+
     data.frame(
-      site = x$site[[1L]],
-      nodes_helped = nrow(x),
+      site = best_row$site,
+      alignment_position = alignment_position,
       gain_max = max(x$gain),
       gain_mean = mean(x$gain),
       normalized_gain_max = max(x$normalized_gain),
       normalized_gain_mean = mean(x$normalized_gain),
-      weighted_gain_sum = sum(x$weight * x$normalized_gain)
+      observed_sequences_min = min(x$total_observed),
+      observed_sequences_mean = mean(x$total_observed),
+      observed_sequences_max = max(x$total_observed),
+      best_node_id = best_row$node_id,
+      best_allele = best_row$best_allele,
+      best_direction = best_row$direction,
+      best_raw_gain = best_row$gain,
+      best_normalized_gain = best_row$normalized_gain,
+      informative_nodes = nrow(x),
+      stringsAsFactors = FALSE
     )
   }))
-  out[order(-out$weighted_gain_sum, -out$normalized_gain_max), ]
+  out[[helped_count_name]] <- out$informative_nodes
+  out$weighted_gain_sum <- vapply(rows, function(x) {
+    if ("weight" %in% names(x)) {
+      sum(x$weight * x$normalized_gain, na.rm = TRUE)
+    } else {
+      NA_real_
+    }
+  }, numeric(1L))
+  out$legacy_weighted_gain_sum <- out$weighted_gain_sum
+  if (!is.null(n_tip)) {
+    out$missing_sequences_mean <- n_tip - out$observed_sequences_mean
+    out$missing_sequences_min <- n_tip - out$observed_sequences_max
+    out$missing_sequences_max <- n_tip - out$observed_sequences_min
+  } else {
+    out$missing_sequences_mean <- NA_real_
+    out$missing_sequences_min <- NA_integer_
+    out$missing_sequences_max <- NA_integer_
+  }
+  out[order(-out$normalized_gain_max, -out[[helped_count_name]], -out$gain_max, out$site), ]
 }
 
 make_node_summary <- function(site_node_scores, node_metadata) {
   if (nrow(site_node_scores) == 0L) {
-    return(node_metadata[0, ])
+    out <- node_metadata[0, ]
+    out$informative_sites <- integer()
+    out$sites_helpful <- integer()
+    out$gain_max <- numeric()
+    out$gain_mean <- numeric()
+    out$normalized_gain_max <- numeric()
+    out$normalized_gain_mean <- numeric()
+    out$best_site <- integer()
+    out$best_node_id <- integer()
+    out$best_allele <- character()
+    out$best_direction <- character()
+    out$best_raw_gain <- numeric()
+    out$best_normalized_gain <- numeric()
+    out$observed_sequences_min <- integer()
+    out$observed_sequences_mean <- numeric()
+    out$observed_sequences_max <- integer()
+    return(out)
   }
 
   rows <- split(site_node_scores, site_node_scores$node_index)
   summary <- do.call(rbind, lapply(rows, function(x) {
+    best_row <- best_summary_row(x)
     data.frame(
-      node_index = x$node_index[[1L]],
-      node_id = x$node_id[[1L]],
+      node_index = best_row$node_index,
+      node_id = best_row$node_id,
+      informative_sites = nrow(x),
       sites_helpful = nrow(x),
       gain_max = max(x$gain),
+      gain_mean = mean(x$gain),
       normalized_gain_max = max(x$normalized_gain),
-      best_site = x$site[which.max(x$normalized_gain)]
+      normalized_gain_mean = mean(x$normalized_gain),
+      best_site = best_row$site,
+      best_node_id = best_row$node_id,
+      best_allele = best_row$best_allele,
+      best_direction = best_row$direction,
+      best_raw_gain = best_row$gain,
+      best_normalized_gain = best_row$normalized_gain,
+      observed_sequences_min = min(x$total_observed),
+      observed_sequences_mean = mean(x$total_observed),
+      observed_sequences_max = max(x$total_observed),
+      stringsAsFactors = FALSE
     )
   }))
   merge(summary, node_metadata, by = c("node_index", "node_id"), sort = FALSE)

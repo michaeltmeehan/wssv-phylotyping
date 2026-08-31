@@ -8,8 +8,10 @@ Generated files are written under `data/processed/` and `outputs/`. They are saf
 | `outputs/tables/site_node_scores_all.rds` | Stage 02 | Informative SNP rules by site and node for the full diagnostic clade set. | Intermediate | After changing SNP scoring thresholds. | Yes |
 | `outputs/tables/site_node_scores_targets.rds` | Stage 02 | Informative SNP rules by site and node for the restricted target clade set. | Intermediate | After changing SNP scoring thresholds or target clades. | Yes |
 | `outputs/tables/site_node_scores.rds` | Stage 02 | Transitional alias of `site_node_scores_all.rds` kept for downstream compatibility. | Intermediate | During the migration period before downstream stages are repointed. | Yes |
-| `outputs/tables/site_summary.csv` | Stage 03 | Per-site score summaries. | Diagnostic/final summary | To find strongest SNPs and signal concentration. | Yes |
-| `outputs/tables/node_summary.csv` | Stage 03 | Per-node score summaries. | Diagnostic/final summary | To see which clades have informative SNPs. | Yes |
+| `outputs/tables/site_summary_all.csv` | Stage 03 | Per-site score summaries for the full diagnostic clade set. | Diagnostic/final summary | To find strongest SNPs and signal concentration across all eligible clades. | Yes |
+| `outputs/tables/node_summary_all.csv` | Stage 03 | Per-node score summaries for the full diagnostic clade set. | Diagnostic/final summary | To see which broad clades have informative SNPs. | Yes |
+| `outputs/tables/site_summary_targets.csv` | Stage 03 | Per-site score summaries for the restricted target clade set. | Diagnostic/final summary | To inspect target-clade SNP candidates and their observed support. | Yes |
+| `outputs/tables/node_summary_targets.csv` | Stage 03 | Per-node score summaries for the restricted target clade set. | Diagnostic/final summary | To inspect target clades individually. | Yes |
 | `outputs/tables/candidate_windows.csv` | Stage 04 | All generated candidate windows. | Intermediate | To check window count, widths, and coordinates. | Yes |
 | `outputs/tables/window_summary.csv` | Stage 04 | Window-level signal, missingness, and node coverage summaries. | Diagnostic/intermediate | Before panel selection and when tuning windows. | Yes |
 | `outputs/tables/window_node_summary.csv` | Stage 04 | Window-by-node score summaries. | Intermediate | When diagnosing node coverage. | Yes |

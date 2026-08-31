@@ -18,8 +18,10 @@ Relevant outputs:
 
 - `outputs/tables/site_node_scores_all.rds`
 - `outputs/tables/site_node_scores_targets.rds`
-- `outputs/tables/site_summary.csv`
-- `outputs/tables/node_summary.csv`
+- `outputs/tables/site_summary_all.csv`
+- `outputs/tables/node_summary_all.csv`
+- `outputs/tables/site_summary_targets.csv`
+- `outputs/tables/node_summary_targets.csv`
 
 ## Window Scoring
 
