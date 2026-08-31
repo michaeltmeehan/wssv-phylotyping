@@ -11,6 +11,12 @@ paths:
 analysis:
   min_clade_size: 2
   max_clade_frac: 0.95
+  min_target_posterior_support: 0.90
+  target_clades:
+    - node_id: 43
+    - node_id: 44
+    - node_id: 46
+    - node_id: 47
   # Lower total observation threshold admits more SNP rules for exploration.
   min_total_obs: 25
   min_side_obs: 2

@@ -41,7 +41,7 @@ data/processed/precomputed.rds
 
 | Stage | Purpose | Main inputs | Main outputs |
 |---|---|---|---|
-| `scripts/01_preprocess_alignment_tree.R` | Reads the alignment and tree, keeps matching tips, encodes bases, finds polymorphic sites, and builds eligible clade masks. | `config/config.yml`, `paths.alignment`, `paths.tree` | `data/processed/precomputed.rds` |
+| `scripts/01_preprocess_alignment_tree.R` | Reads the alignment and tree, keeps matching tips, encodes bases, finds polymorphic sites, builds the broad diagnostic clade masks, and resolves the explicitly configured target clades. | `config/config.yml`, `paths.alignment`, `paths.tree` | `data/processed/precomputed.rds` with `all_clade_mask`, `target_clade_mask`, `all_node_metadata`, and `target_node_metadata` |
 | `scripts/02_score_snps.R` | Scores each polymorphic SNP against each eligible clade. | `precomputed.rds`, `analysis.min_*`, `analysis.chunk_size` | `outputs/tables/site_node_scores.rds` |
 | `scripts/03_summarise_sites.R` | Makes student-readable SNP and node summaries. | `precomputed.rds`, `site_node_scores.rds` | `site_summary.csv`, `node_summary.csv` |
 | `scripts/04_score_windows.R` | Creates fixed and SNP-centred windows and aggregates SNP scores into window scores. | `site_node_scores.rds`, `analysis.windows` | `candidate_windows.csv`, `window_summary.csv`, `window_node_summary.csv` |

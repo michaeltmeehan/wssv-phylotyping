@@ -22,7 +22,7 @@ Recommended groups:
 
 | Group | Config section | Earliest stage to rerun |
 |---|---|---|
-| Clade eligibility | `analysis.min_clade_size`, `analysis.max_clade_frac` | `01_preprocess_alignment_tree.R` |
+| Diagnostic clade eligibility and target selection | `analysis.min_clade_size`, `analysis.max_clade_frac`, `analysis.min_target_posterior_support`, `analysis.target_clades` | `01_preprocess_alignment_tree.R` |
 | SNP scoring | `analysis.min_total_obs`, `min_side_obs`, `min_site_maf`, `min_gain_norm` | `02_score_snps.R` after rerunning stage 01 if clade eligibility changed |
 | Window design | `analysis.windows` | `04_score_windows.R` |
 | Panel selection | `analysis.panel_selection` | `05_select_marker_panel.R` |

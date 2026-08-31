@@ -11,6 +11,7 @@ test_that("polymorphic sites ignore ambiguous and missing bases", {
 
 test_that("SNP scoring finds a clade-marking allele", {
   tree <- ape::read.tree(text = "((a:1,b:1):1,(c:1,(d:1,e:1):1):1);")
+  tree$node.label <- c("0.9", "0.85", "0.75", "1.0")
   alignment <- c(a = "A", b = "A", c = "C", d = "C", e = "C")
   encoded <- encode_alignment_int(alignment)
   clades <- generate_clade_masks(tree, min_clade_size = 2L, max_clade_frac = 0.95)
@@ -18,7 +19,7 @@ test_that("SNP scoring finds a clade-marking allele", {
 
   scores <- score_snp_sites(
     aln_int = encoded,
-    target_mask = clades$target_mask,
+    target_mask = clades$all_clade_mask,
     node_metadata = metadata,
     sites = find_polymorphic_sites(encoded),
     min_total_obs = 4L,

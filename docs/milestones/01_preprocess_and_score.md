@@ -20,8 +20,12 @@ Create reproducible preprocessing objects and score SNPs by their ability to dis
 
 The long scoring table includes node index/id, site, gain, normalized gain,
 best allele, allele direction, observed inside/outside counts, total observed
-count, and node metadata. Eligible clades are consistently represented as
-`target_mask` rows, fixing the prototype's clade/split naming ambiguity.
+count, and node metadata, including MCC posterior support. Stage 01 now keeps
+the full eligible diagnostic clade set separate from the smaller configured
+target clade set. The processed object stores the broad masks and metadata as
+`all_clade_mask` and `all_node_metadata`, plus the restricted target versions
+as `target_clade_mask` and `target_node_metadata`. Legacy aliases are retained
+for downstream stages that have not yet been migrated.
 
 ## Success Criteria
 

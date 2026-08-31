@@ -3,7 +3,7 @@
 The `R/` directory will hold reusable functions shared by the numbered workflow scripts.
 
 - `preprocess.R`: alignment/tree loading, matching, pruning, and coordinate preparation.
-- `tree_utils.R`: MCC-tree node, clade, depth, balance, weight, and target-mask helpers.
+- `tree_utils.R`: MCC-tree node, posterior support, broad diagnostic clade, target clade, depth, balance, legacy weight, and mask helpers.
 - `encoding.R`: alignment and allele encoding helpers.
 - `snp_scoring.R`: per-site/per-node SNP gain scoring and summary helpers.
 - `window_scoring.R`: candidate window generation and scoring helpers.

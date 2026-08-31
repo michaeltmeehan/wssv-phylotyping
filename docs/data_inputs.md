@@ -35,6 +35,7 @@ data/raw/tree/41SEQSUPDATEDEDITEDMCC
 Expected format:
 
 - Newick or Nexus tree readable by `ape::read.tree()` or `ape::read.nexus()`.
+- BEAST-annotated MCC trees should retain internal-node posterior support in `posterior=` comment annotations; the preprocessing stage will import those values into node labels and node metadata.
 - Tip labels should correspond to alignment sequence names.
 - The tree should represent the complete-genome set used for scoring.
 

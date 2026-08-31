@@ -2,7 +2,7 @@
 
 | Term | Definition |
 |---|---|
-| Node | A branching point in the tree. In this repository, eligible internal nodes represent clades that may be scored and classified. |
+| Node | A branching point in the tree. In this repository, eligible internal nodes represent the broad diagnostic clade set, while a configured subset of those nodes is used as the target clade set for assay and classifier design. |
 | Tip | A terminal genome in the tree, usually one complete WSSV genome from the input alignment. |
 | Clade | A group containing a node and all descendant tips below that node. |
 | Marker | A SNP or genomic window used as evidence for classification. |

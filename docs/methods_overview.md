@@ -6,7 +6,7 @@ This page explains the method in plain language. It avoids mathematical detail a
 
 The repository asks: which SNPs and genomic windows help identify where a WSSV genome belongs on an existing tree?
 
-The workflow starts with a complete-genome alignment and an MCC tree. Each internal tree node represents a clade: a group of related tips. The pipeline searches for SNPs that help distinguish each eligible clade from the rest of the tree. Those SNPs are grouped into windows, windows are selected into marker panels, and a classifier uses the selected evidence to make conservative tree-path assignments.
+The workflow starts with a complete-genome alignment and an MCC tree. Each internal tree node represents a clade: a group of related tips. The pipeline first defines a broad diagnostic set of eligible clades, then separately selects a smaller target set for initial assay and classifier design. SNPs are searched against the eligible diagnostic set, grouped into windows, selected into marker panels, and then used by a classifier to make conservative tree-path assignments.
 
 ## Marker Scoring
 

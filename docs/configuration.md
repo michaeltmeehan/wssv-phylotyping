@@ -20,12 +20,14 @@ Tuning labels:
 | `paths.processed` | `data/processed/` | Do not change unless you understand the code | Generated processed-object directory. | Not numeric. | Directory under `data/processed/`. | Changing it can make stages miss upstream files. |
 | `paths.outputs` | `outputs/` | Advanced | Generated output root. | Not numeric. | Directory under `outputs/` or a named experiment output directory. | If changed, all downstream scripts must use the same config. Useful for run comparisons. |
 
-## SNP And Clade Scoring
+## Diagnostic Clades And SNP Scoring
 
 | Parameter | Current value | Tuning label | Plain-language meaning | If increased | If decreased | Suggested range | Inspect after changing |
 |---|---:|---|---|---|---|---|---|
-| `analysis.min_clade_size` | `2` | Advanced | Smallest eligible clade size. | Excludes smaller clades; fewer eligible nodes. | Includes smaller clades; may score fragile clades. | TODO: Michael review; try 2 to 5 only with node-count checks. | Stage 01 messages, `node_summary.csv`. |
-| `analysis.max_clade_frac` | `0.95` | Advanced | Largest eligible clade as a fraction of retained tips. | Allows very broad clades if closer to 1. | Excludes broad/root-like clades. | TODO: Michael review; try 0.8 to 0.98 only with node-count checks. | Eligible node count, `node_summary.csv`. |
+| `analysis.min_clade_size` | `2` | Advanced | Smallest eligible diagnostic clade size. | Excludes smaller clades; fewer eligible nodes. | Includes smaller clades; may score fragile clades. | TODO: Michael review; try 2 to 5 only with node-count checks. | Stage 01 messages, `node_summary.csv`. |
+| `analysis.max_clade_frac` | `0.95` | Advanced | Largest eligible diagnostic clade as a fraction of retained tips. | Allows very broad clades if closer to 1. | Excludes broad/root-like clades. | TODO: Michael review; try 0.8 to 0.98 only with node-count checks. | Eligible node count, `node_summary.csv`. |
+| `analysis.min_target_posterior_support` | `0.90` | Advanced | Minimum posterior support required for an explicitly selected target clade. | Tightens the target set to higher-confidence clades. | Allows lower-support targets. | TODO: Michael review; 0.90 to 0.99 is a cautious range. | Stage 01 target-clade messages, `target_node_metadata`. |
+| `analysis.target_clades` | `4 node_id entries` | Advanced | Explicitly selected clades used for assay/classifier targeting. | Not numeric. | Not numeric. | Keep the configured target set to the intended major clades. | Stage 01 target-clade messages, `target_clade_mask`, `target_node_metadata`. |
 | `analysis.min_total_obs` | `30` | Safe for student tuning | Minimum observed non-missing bases required for a site-node test. | Fewer SNP rules, more conservative. | More SNP rules, more missingness risk. | TODO: Michael review; start near 20 to retained tip count. | `site_node_scores.rds`, `site_summary.csv`. |
 | `analysis.min_side_obs` | `2` | Safe for student tuning | Minimum observed bases required on both inside and outside sides of a clade. | Excludes poorly represented splits. | Allows fragile comparisons. | 2 to 5. | `node_summary.csv`, eligible scored nodes. |
 | `analysis.min_site_maf` | `2` | Safe for student tuning | Minimum count for an allele before it can define a SNP rule. | Removes rare allele rules. | Includes rare allele rules. | 2 to 5. | `site_summary.csv`, `site_node_scores.rds`. |

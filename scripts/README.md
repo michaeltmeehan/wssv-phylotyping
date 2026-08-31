@@ -19,9 +19,11 @@ Milestone scripts are runnable from the repository root:
   when you want a single command for a configured run:
   `Rscript scripts/run_all.R`.
 - `01_preprocess_alignment_tree.R` reads configured raw inputs, matches tree
-  tips to alignment names, encodes bases, derives eligible node target masks,
-  and writes `data/processed/precomputed.rds`.
-- `02_score_snps.R` scores polymorphic sites against eligible clades and writes
+  tips to alignment names, encodes bases, derives the full diagnostic clade set
+  plus the explicitly configured target clades, and writes
+  `data/processed/precomputed.rds`.
+- `02_score_snps.R` scores polymorphic sites against eligible diagnostic clades
+  and writes
   `outputs/tables/site_node_scores.rds`.
 - `03_summarise_sites.R` writes `outputs/tables/site_summary.csv` and
   `outputs/tables/node_summary.csv`.
