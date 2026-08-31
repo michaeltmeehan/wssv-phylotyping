@@ -37,13 +37,14 @@ Milestone scripts are runnable from the repository root:
   `outputs/tables/target_clade_strongest_snps.csv`, plus the legacy
   compatibility aliases `outputs/tables/site_summary.csv` and
   `outputs/tables/node_summary.csv` for the full diagnostic summaries.
-- `04_score_windows.R` generates fixed and optional SNP-centred windows from
-  configured widths, aggregates site-node scores, and writes
-  `outputs/tables/candidate_windows.csv`,
-  `outputs/tables/window_summary.csv`, and
-  `outputs/tables/window_node_summary.csv`. This and the later panel-selection
-  stages are the legacy assay-oriented path that will be redesigned after the
-  stage 01-03 cleanup.
+- `04_score_windows.R` generates candidate amplicons from informative target
+  SNP geography, summarises per-target evidence, and writes
+  `outputs/tables/candidate_amplicons.csv`,
+  `outputs/tables/candidate_amplicon_target_scores.csv`,
+  `outputs/tables/candidate_amplicon_snps.csv`, and the spatial diagnostic
+  figure `outputs/figures/candidate_amplicons_spatial.png`. The later
+  panel-selection stages still use the older window path and are legacy until
+  they are redesigned around these outputs.
 - `05_select_marker_panel.R` filters scored windows, greedily selects
   complementary non-redundant windows, compares simple weighted-gain baselines,
   and writes `outputs/tables/selected_panel.csv`,

@@ -38,17 +38,18 @@ Primary outputs:
 - `outputs/tables/site_summary_targets.csv`
 - `outputs/tables/site_summary.csv` (legacy alias for the full diagnostic set)
 
-## Stage 2: Window Scoring
+## Stage 2: Candidate Amplicon Characterisation
 
-Aggregate site-level signal into candidate genomic windows. Candidate windows may include fixed sliding windows, SNP-centred windows, known marker regions, GenBank-covered regions, and future primer-compatible amplicons.
+Aggregate target-specific SNP signal into candidate amplicon regions. Candidate regions should begin from informative SNP geography, expand to plausible amplicon length bounds, and preserve per-target evidence rather than collapsing to one score.
 
 This and the later panel-selection stages are legacy assay-oriented scaffolding that will be redesigned after the stage 01-03 cleanup.
 
 Primary outputs:
 
-- `outputs/tables/candidate_windows.csv`
-- `outputs/tables/window_summary.csv`
-- Genome-wide window informativeness figures.
+- `outputs/tables/candidate_amplicons.csv`
+- `outputs/tables/candidate_amplicon_target_scores.csv`
+- `outputs/tables/candidate_amplicon_snps.csv`
+- Candidate-spatial diagnostic figure(s).
 
 ## Stage 3: Greedy Marker Panel Selection
 

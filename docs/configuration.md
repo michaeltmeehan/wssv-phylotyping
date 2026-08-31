@@ -27,7 +27,7 @@ Tuning labels:
 | `analysis.min_clade_size` | `2` | Advanced | Smallest eligible diagnostic clade size. | Excludes smaller clades; fewer eligible nodes. | Includes smaller clades; may score fragile clades. | TODO: Michael review; try 2 to 5 only with node-count checks. | Stage 01 messages, `node_summary_all.csv`. |
 | `analysis.max_clade_frac` | `0.95` | Advanced | Largest eligible diagnostic clade as a fraction of retained tips. | Allows very broad clades if closer to 1. | Excludes broad/root-like clades. | TODO: Michael review; try 0.8 to 0.98 only with node-count checks. | Eligible node count, `node_summary_all.csv`. |
 | `analysis.min_target_posterior_support` | `0.90` | Advanced | Minimum tree posterior support required for an explicitly selected target clade. | Tightens the target set to higher-confidence clades. | Allows lower-support targets. | TODO: Michael review; 0.90 to 0.99 is a cautious range. | Stage 01 target-clade messages, `target_node_metadata$posterior_support`. |
-| `analysis.target_clades` | `4 node_id entries` | Advanced | Explicitly selected clades used for stage 01 target-clade summarisation and the legacy assay/classifier path. | Not numeric. | Not numeric. | Keep the configured target set to the intended major clades. | Stage 01 target-clade messages, `target_clade_mask`, `target_node_metadata`. |
+| `analysis.target_clades` | `4 node_id entries` | Advanced | Explicitly selected clades used for stage 01 target-clade summarisation and the legacy assay/classifier path. Stage 04 now uses `analysis.amplicons.primary_target_nodes` for its own filtering. | Not numeric. | Not numeric. | Keep the configured target set to the intended major clades. | Stage 01 target-clade messages, `target_clade_mask`, `target_node_metadata`. |
 | `analysis.min_total_obs` | `30` | Safe for student tuning | Minimum observed non-missing bases required for a site-node test. | Fewer SNP rules, more conservative. | More SNP rules, more missingness risk. | TODO: Michael review; start near 20 to retained tip count. | `site_node_scores_all.rds`, `site_node_scores_targets.rds`, `site_summary_all.csv`. |
 | `analysis.min_side_obs` | `2` | Safe for student tuning | Minimum observed bases required on both inside and outside sides of a clade. | Excludes poorly represented splits. | Allows fragile comparisons. | 2 to 5. | `node_summary_all.csv`, eligible scored nodes. |
 | `analysis.min_site_maf` | `2` | Safe for student tuning | Minimum count for an allele before it can define a SNP rule. | Removes rare allele rules. | Includes rare allele rules. | 2 to 5. | `site_summary_all.csv`, `site_node_scores_all.rds`, `site_node_scores_targets.rds`. |
@@ -35,15 +35,32 @@ Tuning labels:
 | `analysis.chunk_size` | `5000` | Do not change unless you understand the code | Progress-message interval during SNP scoring. | Fewer progress messages. | More progress messages. | 1000 to 10000. | Runtime only. |
 | `analysis.candidate_window_sizes` | `300, 500, 1000, 2000` | Advanced | Legacy fallback window widths if `analysis.windows` is absent. | Larger windows capture more sites. | Smaller windows are more targeted. | Use `analysis.windows.widths` instead. | `window_summary.csv`. |
 
-## Window Scoring
+## Amplicon Candidate Scoring
 
 | Parameter | Current value | Tuning label | Plain-language meaning | If increased | If decreased | Suggested range | Inspect after changing |
 |---|---:|---|---|---|---|---|---|
-| `analysis.windows.widths` | `300, 500, 1000, 2000` | Safe for student tuning | Fixed window sizes to tile across the alignment. | Larger windows may capture more SNPs but are less compact. | Smaller windows are more specific but may miss signal. | TODO: Michael review; 300 to 5000 is an exploratory range. | `candidate_windows.csv`, `window_summary.csv`. |
-| `analysis.windows.overlap` | `0.5` | Safe for student tuning | Fractional overlap between fixed windows. | More overlapping windows, slower and more redundant. | Fewer windows, faster but less fine-grained. | 0 to 0.75. | Number of candidate windows. |
-| `analysis.windows.min_informative_snps` | `1` | Safe for student tuning | Minimum informative SNPs for a window to be retained in scoring. | Fewer windows, stronger minimum signal. | More windows, including sparse windows. | 1 to 5. | `window_summary.csv`. |
-| `analysis.windows.snp_centered.enabled` | `true` | Safe for student tuning | Adds windows centred on informative SNPs. | Not numeric; `true` increases candidate windows. | `false` uses fixed windows only. | `true` for discovery, `false` for simple tiling. | `candidate_windows.csv`, runtime. |
-| `analysis.windows.snp_centered.widths` | `300, 500` | Safe for student tuning | Widths for SNP-centred windows. | Wider SNP-centred regions. | Narrower SNP-centred regions. | 300 to 1000. | `candidate_windows.csv`, `window_summary.csv`. |
+| `analysis.amplicons.primary_target_nodes` | `45, 66, 72, 80` | Do not change unless you understand the code | Primary assay targets used by stage 04 to build candidate amplicons. | Not numeric. | Not numeric. | Keep the intended major clades only. | `candidate_amplicons.csv`, `candidate_amplicon_target_scores.csv`. |
+| `analysis.amplicons.diagnostic_target_nodes` | `67, 70` | Advanced | Extra diagnostic nodes that may remain in the broader target catalogue but should not drive primary amplicon selection. | Not numeric. | Not numeric. | Keep any optional diagnostics separate from the primary targets. | `site_node_scores_targets.rds`, stage 04 filtering messages. |
+| `analysis.amplicons.min_length` | `500` | Safe for student tuning | Minimum candidate amplicon length. | Larger, broader candidate intervals. | Smaller, tighter candidate intervals. | 500 to 3000. | `candidate_amplicons.csv`. |
+| `analysis.amplicons.max_length` | `3000` | Safe for student tuning | Maximum candidate amplicon length. | Allows wider candidate regions. | Forces tighter clusters. | 500 to 3000. | `candidate_amplicons.csv`. |
+| `analysis.amplicons.flank_search_width` | `100` | Safe for student tuning | How far left and right stage 04 inspects for simple flank quality checks. | Wider flank diagnostics. | Narrower flank diagnostics. | 50 to 250. | `candidate_amplicons.csv`. |
+| `analysis.amplicons.minimum_gain_threshold` | `0.5` | Safe for student tuning | Normalized-gain threshold counted as any signal for a target. | Fewer targets counted as signal-bearing. | More targets counted as signal-bearing. | 0.3 to 0.8. | `targets_with_any_signal`. |
+| `analysis.amplicons.strong_gain_threshold` | `0.8` | Safe for student tuning | Normalized-gain threshold counted as strong signal for a target. | Fewer strong-signal targets. | More strong-signal targets. | 0.6 to 0.95. | `targets_with_strong_signal`. |
+| `analysis.amplicons.flank_min_non_missing_fraction` | `0.9` | Safe for student tuning | Minimum observed completeness for a flank stretch to be considered promising. | Stricter conserved flank calls. | More permissive conserved flank calls. | 0.8 to 0.99. | `left_flank_conserved_stretch`, `right_flank_conserved_stretch`. |
+| `analysis.amplicons.flank_max_variable_fraction` | `0.25` | Safe for student tuning | Maximum polymorphic-site fraction for a flank stretch to be considered conserved. | Fewer conserved flanks. | More conserved flanks. | 0.05 to 0.3. | Flank diagnostics in `candidate_amplicons.csv`. |
+| `analysis.amplicons.flank_min_gc_fraction` | `0.35` | Safe for student tuning | Minimum GC fraction for a flank stretch to look primer-friendly. | Biases toward GC-richer flanks. | Allows more AT-rich flanks. | 0.3 to 0.6. | Flank diagnostics in `candidate_amplicons.csv`. |
+| `analysis.amplicons.flank_min_conserved_fraction` | `0.9` | Safe for student tuning | Minimum complete-sequence fraction for a flank stretch to count as conserved. | Requires more complete flank sequence. | Allows more partial flank sequence. | 0.8 to 0.99. | Flank diagnostics in `candidate_amplicons.csv`. |
+| `analysis.amplicons.flank_complete_fraction` | `0.95` | Safe for student tuning | Completeness threshold used for reporting near-complete candidate regions. | More sequences count as near-complete. | Fewer sequences count as near-complete. | 0.9 to 0.99. | `complete_fraction`, `near_complete_fraction`. |
+
+## Legacy Window Scoring
+
+| Parameter | Current value | Tuning label | Plain-language meaning | If increased | If decreased | Suggested range | Inspect after changing |
+|---|---:|---|---|---|---|---|---|
+| `analysis.windows.widths` | `300, 500, 1000, 2000` | Legacy | Fixed window sizes to tile across the alignment. This is no longer the primary stage-04 path. | Larger windows may capture more SNPs but are less compact. | Smaller windows are more specific but may miss signal. | TODO: Michael review; 300 to 5000 is an exploratory range. | Legacy `candidate_windows.csv`, `window_summary.csv`. |
+| `analysis.windows.overlap` | `0.5` | Legacy | Fractional overlap between fixed windows. | More overlapping windows, slower and more redundant. | Fewer windows, faster but less fine-grained. | 0 to 0.75. | Number of candidate windows. |
+| `analysis.windows.min_informative_snps` | `1` | Legacy | Minimum informative SNPs for a window to be retained in scoring. | Fewer windows, stronger minimum signal. | More windows, including sparse windows. | 1 to 5. | `window_summary.csv`. |
+| `analysis.windows.snp_centered.enabled` | `true` | Legacy | Adds windows centred on informative SNPs. | Not numeric; `true` increases candidate windows. | `false` uses fixed windows only. | `true` for discovery, `false` for simple tiling. | Legacy `candidate_windows.csv`, runtime. |
+| `analysis.windows.snp_centered.widths` | `300, 500` | Legacy | Widths for SNP-centred windows. | Wider SNP-centred regions. | Narrower SNP-centred regions. | 300 to 1000. | Legacy `candidate_windows.csv`, `window_summary.csv`. |
 
 ## Panel Selection
 
@@ -109,7 +126,8 @@ Tuning labels:
 Always compare a changed run against a baseline. Look at at least:
 
 - `site_summary_all.csv`
-- `window_summary.csv`
+- `candidate_amplicons.csv`
+- `candidate_amplicon_target_scores.csv`
 - `selected_panel.csv`
 - `panel_summary.csv`
 - `validation_panel_summary.csv`

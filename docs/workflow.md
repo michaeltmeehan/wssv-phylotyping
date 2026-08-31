@@ -1,6 +1,6 @@
 # Workflow
 
-This pipeline turns a WSSV whole-genome alignment and MCC tree into scored SNPs, candidate marker windows, selected marker panels, validation summaries, a trained classifier, optional partial-genome classifications, and a report.
+This pipeline turns a WSSV whole-genome alignment and MCC tree into scored SNPs, candidate amplicon regions, selected marker panels, validation summaries, a trained classifier, optional partial-genome classifications, and a report.
 
 ## Pipeline Diagram
 
@@ -20,7 +20,7 @@ data/processed/precomputed.rds
 03_summarise_sites.R -> site_summary_all.csv, node_summary_all.csv, site_summary_targets.csv, node_summary_targets.csv, target_clade_diagnostics.csv, target_clade_strongest_snps.csv
         |
         v
-04_score_windows.R -> candidate_windows.csv, window_summary.csv, window_node_summary.csv
+04_score_windows.R -> candidate_amplicons.csv, candidate_amplicon_target_scores.csv, candidate_amplicon_snps.csv
         |
         v
 05_select_marker_panel.R -> selected_panel.csv, panel_summary.csv
@@ -44,8 +44,8 @@ data/processed/precomputed.rds
 | `scripts/01_preprocess_alignment_tree.R` | Reads the alignment and tree, keeps matching tips, encodes bases, finds polymorphic sites, builds the broad diagnostic clade masks, and resolves the explicitly configured target clades. | `config/config.yml`, `paths.alignment`, `paths.tree` | `data/processed/precomputed.rds` with `all_clade_mask`, `target_clade_mask`, `all_node_metadata`, `target_node_metadata`, plus compatibility aliases for older stage 04+ code |
 | `scripts/02_score_snps.R` | Scores each polymorphic SNP against the full diagnostic clade set and the restricted target clade set. | `precomputed.rds`, `analysis.min_*`, `analysis.chunk_size` | `outputs/tables/site_node_scores_all.rds`, `outputs/tables/site_node_scores_targets.rds`, legacy `outputs/tables/site_node_scores.rds` alias |
 | `scripts/03_summarise_sites.R` | Makes student-readable SNP and node summaries for the full diagnostic set and restricted target set, plus a compact target-clade checkpoint used before window and primer-panel design. | `precomputed.rds`, `site_node_scores_all.rds`, `site_node_scores_targets.rds` | `site_summary_all.csv`, `node_summary_all.csv`, `site_summary_targets.csv`, `node_summary_targets.csv`, `target_clade_diagnostics.csv`, `target_clade_strongest_snps.csv` |
-| `scripts/04_score_windows.R` | Legacy assay-oriented window scoring that creates fixed and SNP-centred windows and aggregates SNP scores into window scores. | `site_node_scores_all.rds` with fallback to `site_node_scores.rds`, `analysis.windows` | `candidate_windows.csv`, `window_summary.csv`, `window_node_summary.csv` |
-| `scripts/05_select_marker_panel.R` | Legacy assay-oriented panel selection that filters windows and greedily selects complementary marker windows. | `window_summary.*`, `window_node_summary.*`, `analysis.panel_selection` | `selected_panel.csv`, `selected_panel_steps.csv`, `panel_node_coverage.csv`, `panel_summary.csv` |
+| `scripts/04_score_windows.R` | Candidate amplicon characterisation that starts from informative target-clade SNP geography, groups nearby sites into plausible amplicon regions, and summarises per-target evidence without selecting a final panel. | `site_node_scores_targets.rds`, `precomputed.rds`, `analysis.amplicons` | `candidate_amplicons.csv`, `candidate_amplicon_target_scores.csv`, `candidate_amplicon_snps.csv`, `candidate_amplicons_spatial.png` |
+| `scripts/05_select_marker_panel.R` | Legacy assay-oriented panel selection that still expects the older window-summary pathway and will be redesigned after the stage-04 amplicon outputs are reviewed. | `window_summary.*`, `window_node_summary.*`, `analysis.panel_selection` | `selected_panel.csv`, `selected_panel_steps.csv`, `panel_node_coverage.csv`, `panel_summary.csv` |
 | `scripts/06_validate_panel.R` | Legacy assay-oriented validation that checks complete-genome signal retained by selected panels and random/baseline fragments. | `selected_panel.*`, `site_node_scores_all.*` with legacy fallback, `analysis.validation` | `validation_panel_summary.csv`, `validation_tip_summary.csv`, `validation_fragment_summary.csv`, `validation_baseline_summary.csv` |
 | `scripts/07_train_classifier.R` | Legacy assay-oriented classifier training that builds an interpretable tree-path classifier and runs training-tip sanity checks. | `selected_panel.*`, `site_node_scores_all.*` with legacy fallback, `analysis.classifier` | `outputs/models/wssv_classifier.rds`, `classifier_training_summary.csv`, `classifier_tip_predictions.csv`, optional `classifier_node_evidence.csv` |
 | `scripts/08_classify_partials.R` | Legacy assay-oriented partial classification that reads partial FASTA files, maps them to alignment coordinates, and classifies mapped records. | `wssv_classifier.rds`, `data/raw/partials/`, `analysis.partials` | `partial_classifications.csv`, panel/opportunistic classification tables, evidence tables, region diagnostics |
@@ -66,4 +66,4 @@ For careful debugging or parameter tuning, run scripts one at a time. If a downs
 - `data/raw/` is input storage. Do not generate or modify raw data there.
 - `data/processed/` and `outputs/` are generated and can be regenerated from the raw inputs and config.
 - The report in `outputs/reports/` is a summary of existing outputs, not a substitute for inspecting tables.
-- Stages 04 and later currently preserve legacy assay-oriented panel-selection behavior and are the next redesign target after the stage 01-03 cleanup.
+- Stage 05 and later still preserve the legacy assay-oriented panel-selection behavior and will be revisited after the stage-04 amplicon review.

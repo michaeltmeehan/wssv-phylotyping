@@ -17,6 +17,19 @@ analysis:
     - node_id: 44
     - node_id: 46
     - node_id: 47
+  amplicons:
+    primary_target_nodes: [43, 44, 46, 47]
+    diagnostic_target_nodes: []
+    min_length: 500
+    max_length: 3000
+    flank_search_width: 100
+    strong_gain_threshold: 0.8
+    minimum_gain_threshold: 0.5
+    flank_min_non_missing_fraction: 0.9
+    flank_max_variable_fraction: 0.25
+    flank_min_gc_fraction: 0.35
+    flank_min_conserved_fraction: 0.9
+    flank_complete_fraction: 0.95
   min_total_obs: 30
   min_side_obs: 2
   min_site_maf: 2

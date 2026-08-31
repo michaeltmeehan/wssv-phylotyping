@@ -14,9 +14,10 @@ Generated files are written under `data/processed/` and `outputs/`. They are saf
 | `outputs/tables/node_summary_targets.csv` | Stage 03 | Per-node score summaries for the restricted target clade set. | Diagnostic/final summary | To inspect target clades individually. | Yes |
 | `outputs/tables/target_clade_diagnostics.csv` | Stage 03 | Compact one-row-per-target checkpoint for deciding whether the configured target clades are suitable for primer-panel work. | Diagnostic checkpoint | Read before window or primer design to check posterior support, descendant size, informative-site counts, strongest gain, and best-site missingness. | Yes |
 | `outputs/tables/target_clade_strongest_snps.csv` | Stage 03 | Strongest informative SNPs for each configured target clade. | Diagnostic checkpoint | Read alongside `target_clade_diagnostics.csv` to inspect the exact SNPs driving each target-clade signal. | Yes |
-| `outputs/tables/candidate_windows.csv` | Stage 04 | All generated candidate windows. | Legacy intermediate | To check window count, widths, and coordinates. | Yes |
-| `outputs/tables/window_summary.csv` | Stage 04 | Window-level signal, missingness, and node coverage summaries. | Legacy diagnostic/intermediate | Before panel selection and when tuning windows. | Yes |
-| `outputs/tables/window_node_summary.csv` | Stage 04 | Window-by-node score summaries. | Legacy intermediate | When diagnosing node coverage. | Yes |
+| `outputs/tables/candidate_amplicons.csv` | Stage 04 | Candidate amplicon intervals with per-candidate completeness, flank, and target-coverage summaries. | Diagnostic/intermediate | To inspect which genomic regions have assay-feasible discriminatory signal. | Yes |
+| `outputs/tables/candidate_amplicon_target_scores.csv` | Stage 04 | One row per candidate amplicon and primary target clade with target-specific gain summaries. | Diagnostic/intermediate | To inspect which clades contribute signal to each candidate region. | Yes |
+| `outputs/tables/candidate_amplicon_snps.csv` | Stage 04 | One row per candidate amplicon, target clade, and informative SNP association. | Diagnostic/intermediate | To audit the exact SNPs supporting each region. | Yes |
+| `outputs/figures/candidate_amplicons_spatial.png` | Stage 04 | Simple spatial diagnostic of informative SNPs and candidate amplicons. | Diagnostic figure | To see SNP clustering along the genome at a glance. | Yes |
 | `outputs/tables/selected_panel.csv` | Stage 05 | Greedy selected marker windows in order. | Legacy final candidate panel | Always inspect after panel tuning. | Yes |
 | `outputs/tables/selected_panel_steps.csv` | Stage 05 | Marginal gain and cumulative gain for each selected step. | Legacy diagnostic | To check whether later windows add real signal. | Yes |
 | `outputs/tables/panel_node_coverage.csv` | Stage 05 | Node coverage for selected panel sizes. | Legacy diagnostic | To identify covered and uncovered nodes. | Yes |
@@ -42,4 +43,4 @@ Generated files are written under `data/processed/` and `outputs/`. They are saf
 
 Most tables are also written as `.rds` files where downstream scripts need exact R types. Use CSV files for manual review; use RDS files for pipeline reruns.
 
-Stages 04-09 are currently legacy assay-oriented outputs and will be revisited in the later redesign. Keep their filenames intact for now so downstream code continues to run.
+Stage 04 now reports candidate amplicon regions rather than a final assay panel. Stages 05-09 still contain legacy assay-oriented outputs and will be revisited in a later redesign.

@@ -58,7 +58,19 @@ test_that("eligible clade masks and node metadata are generated", {
 })
 
 test_that("configured target clades resolve against the shipped tree", {
-  config <- yaml::read_yaml(test_path("../../config/config.yml"))
+  config <- list(
+    analysis = list(
+      min_clade_size = 2L,
+      max_clade_frac = 0.95,
+      min_target_posterior_support = 0.90,
+      target_clades = list(
+        list(node_id = 43L),
+        list(node_id = 44L),
+        list(node_id = 46L),
+        list(node_id = 47L)
+      )
+    )
+  )
   tree <- read_tree_any(test_path("../../data/raw/tree/41SEQSUPDATEDEDITEDMCC"))
   all_clades <- generate_clade_masks(
     tree,

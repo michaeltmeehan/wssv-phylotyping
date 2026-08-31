@@ -6,7 +6,7 @@ This page explains the method in plain language. It avoids mathematical detail a
 
 The repository asks: which SNPs and genomic windows help identify where a WSSV genome belongs on an existing tree?
 
-The workflow starts with a complete-genome alignment and an MCC tree. Each internal tree node represents a clade: a group of related tips. The pipeline first defines a broad diagnostic set of eligible clades, then separately selects a smaller target set for stage 03 inspection and the legacy assay/classifier path. SNPs are searched against the eligible diagnostic set, grouped into windows, selected into marker panels, and then used by a classifier to make conservative tree-path assignments.
+The workflow starts with a complete-genome alignment and an MCC tree. Each internal tree node represents a clade: a group of related tips. The pipeline first defines a broad diagnostic set of eligible clades, then separately scores SNPs for the explicit target clades. Stage 04 now turns those target-specific SNPs into candidate amplicon regions that can plausibly hold discriminatory signal for the major clades. Later panel selection and classifier stages remain legacy scaffolding for now.
 
 ## Marker Scoring
 
@@ -23,26 +23,27 @@ Relevant outputs:
 - `outputs/tables/site_summary_targets.csv`
 - `outputs/tables/node_summary_targets.csv`
 
-## Window Scoring
+## Candidate Amplicon Characterisation
 
-Single SNPs may be too narrow for practical marker design. The workflow groups informative SNPs into candidate genomic windows.
+Single SNPs may be too narrow for practical marker design. Stage 04 groups informative target-clade SNPs into candidate amplicons that can move away from a rigid genome-wide grid.
 
-Two window types can be created:
+The stage:
 
-- Fixed windows that tile across the alignment.
-- SNP-centred windows around informative SNPs when enabled.
-
-Each window receives summary scores based on the informative SNPs and nodes it covers.
+- starts from the genomic coordinates of informative target SNPs,
+- clusters nearby sites that can fit within the configured amplicon length bounds,
+- deduplicates intervals that would otherwise contain the same informative SNP set,
+- and reports per-target evidence vectors instead of collapsing everything into one scalar score.
 
 Relevant outputs:
 
-- `outputs/tables/candidate_windows.csv`
-- `outputs/tables/window_summary.csv`
-- `outputs/tables/window_node_summary.csv`
+- `outputs/tables/candidate_amplicons.csv`
+- `outputs/tables/candidate_amplicon_target_scores.csv`
+- `outputs/tables/candidate_amplicon_snps.csv`
+- `outputs/figures/candidate_amplicons_spatial.png`
 
 ## Panel Selection
 
-A good panel should contain complementary windows, not just several windows that all support the same clade. The greedy panel selector adds one window at a time. At each step it prefers a compatible window that adds the most new weighted node coverage under the configured overlap and distance rules.
+A good panel should contain complementary windows, not just several windows that all support the same clade. The greedy panel selector still reflects the older window-based path and is now considered legacy until it is redesigned around the new stage-04 amplicon outputs.
 
 Relevant outputs:
 
