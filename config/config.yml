@@ -1,6 +1,6 @@
 paths:
-  alignment: "data/raw/alignment/41seqscollagen_Edited.fasta"
-  tree: "data/raw/tree/41SEQSUPDATEDEDITEDMCC"
+  alignment: "data/raw/alignment/42_Aligned_US_out.fasta"
+  tree: "data/raw/tree/42wssv_Removing_US_MCC"
   partials: "data/raw/partials/"
   processed: "data/processed/"
   outputs: "outputs/"
@@ -10,11 +10,11 @@ analysis:
   max_clade_frac: 0.95
   min_target_posterior_support: 0.90
   target_clades:
-    - node_id: 43
-    - node_id: 44
-    - node_id: 46
-    - node_id: 47
-  min_total_obs: 30
+    - node_id: 45
+    - node_id: 66
+    - node_id: 72
+    - node_id: 80
+  min_total_obs: 42
   min_side_obs: 2
   min_site_maf: 2
   min_gain_norm: 0.5

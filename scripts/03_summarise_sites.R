@@ -60,7 +60,7 @@ site_summary_targets <- make_site_summary(
   helped_count_name = "target_clades_helped"
 )
 node_summary_targets <- make_node_summary(site_node_scores_targets, pre$target_node_metadata)
-target_checkpoint <- make_target_clade_checkpoint(pre, site_node_scores_targets, top_n = 3L)
+target_checkpoint <- make_target_clade_checkpoint(pre, site_node_scores_targets, top_n = 100L)
 
 write.csv(site_summary_all, file.path(table_dir, "site_summary_all.csv"), row.names = FALSE)
 write.csv(node_summary_all, file.path(table_dir, "node_summary_all.csv"), row.names = FALSE)
