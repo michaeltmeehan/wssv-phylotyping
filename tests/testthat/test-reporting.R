@@ -9,8 +9,8 @@ test_that("numeric summaries handle values and missing-only vectors", {
 })
 
 test_that("signal concentration interpretation distinguishes concentrated signal", {
-  concentrated <- data.frame(weighted_gain_sum = c(9, 1, 0))
-  spread <- data.frame(weighted_gain_sum = rep(1, 20))
+  concentrated <- data.frame(weighted_normalized_gain_sum = c(9, 1, 0))
+  spread <- data.frame(weighted_normalized_gain_sum = rep(1, 20))
 
   expect_match(interpret_signal_concentration(concentrated, top_n = 1L), "concentrated")
   expect_match(interpret_signal_concentration(spread, top_n = 2L), "spread")

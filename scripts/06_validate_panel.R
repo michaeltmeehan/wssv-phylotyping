@@ -2,10 +2,13 @@
 
 # Stage 06: validate how much complete-genome signal is retained by selected
 # panel sizes and by random/baseline fragment sets.
-# Inputs: precomputed data, site_node_scores, window_summary, selected_panel,
-# and analysis.validation settings from config/config.yml.
+# Inputs: precomputed data, site_node_scores_all with fallback to the legacy
+# site_node_scores alias, window_summary, selected_panel, and analysis.validation
+# settings from config/config.yml.
 # Outputs: validation_panel_summary, validation_tip_summary,
 # validation_fragment_summary, and validation_baseline_summary as CSV/RDS files.
+# This remains in the legacy assay-oriented workflow pending the later stage-04+
+# redesign.
 # Run directly after scripts/05_select_marker_panel.R.
 
 source("R/validation.R")
@@ -26,7 +29,7 @@ if (!file.exists(precomputed_path)) {
 }
 
 pre <- readRDS(precomputed_path)
-site_node_scores <- read_table_output(table_dir, "site_node_scores", "scripts/02_score_snps.R")
+site_node_scores_all <- read_table_output(table_dir, "site_node_scores_all", "scripts/02_score_snps.R", fallback_stems = "site_node_scores")
 window_summary <- read_table_output(table_dir, "window_summary", "scripts/04_score_windows.R")
 selected_panel <- read_table_output(table_dir, "selected_panel", "scripts/05_select_marker_panel.R")
 
@@ -63,17 +66,17 @@ if (is.null(seed)) {
 }
 set.seed(as.integer(seed))
 
-target_mask <- pre$target_mask
-if (!is.null(target_mask) && is.null(rownames(target_mask)) && "node_id" %in% names(pre$node_metadata)) {
-  rownames(target_mask) <- pre$node_metadata$node_id
+target_clade_mask <- pre$target_clade_mask
+if (!is.null(target_clade_mask) && is.null(rownames(target_clade_mask)) && "node_id" %in% names(pre$target_node_metadata)) {
+  rownames(target_clade_mask) <- pre$target_node_metadata$node_id
 }
 
 tip_rows <- lapply(panel_sizes, function(size) {
   evaluate_panel_signal(
     aln_int = pre$aln_int,
     windows = selected_panel,
-    site_node_scores = site_node_scores,
-    target_mask = target_mask,
+    site_node_scores = site_node_scores_all,
+    target_mask = target_clade_mask,
     panel_size = size,
     method = "selected_panel",
     min_informative_sites = as.integer(min_informative_sites),
@@ -93,7 +96,7 @@ fragments <- make_random_fragments(
 validation_fragment_summary <- summarise_fragment_signal(
   aln_int = pre$aln_int,
   fragments = fragments,
-  site_node_scores = site_node_scores,
+  site_node_scores = site_node_scores_all,
   min_informative_sites = as.integer(min_informative_sites),
   min_informative_nodes = as.integer(min_informative_nodes)
 )
@@ -114,8 +117,8 @@ if (baseline_replicates > 0L && length(panel_sizes) > 0L) {
       baseline_rows[[length(baseline_rows) + 1L]] <- evaluate_panel_signal(
         aln_int = pre$aln_int,
         windows = rep_windows,
-        site_node_scores = site_node_scores,
-        target_mask = target_mask,
+        site_node_scores = site_node_scores_all,
+        target_mask = target_clade_mask,
         panel_size = nrow(rep_windows),
         method = "random_matched",
         replicate = replicate,
@@ -133,8 +136,8 @@ top_rows <- lapply(panel_sizes, function(size) {
   evaluate_panel_signal(
     aln_int = pre$aln_int,
     windows = top_windows,
-    site_node_scores = site_node_scores,
-    target_mask = target_mask,
+    site_node_scores = site_node_scores_all,
+    target_mask = target_clade_mask,
     panel_size = size,
     method = "top_weighted_gain",
     min_informative_sites = as.integer(min_informative_sites),

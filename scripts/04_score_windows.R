@@ -2,13 +2,17 @@
 
 # Stage 04: build fixed and optional SNP-centred genomic windows, then
 # aggregate informative SNP scores into candidate marker-window summaries.
-# Inputs: data/processed/precomputed.rds, outputs/tables/site_node_scores.rds,
-# and analysis.windows settings from config/config.yml.
+# Inputs: data/processed/precomputed.rds, outputs/tables/site_node_scores_all.rds
+# with fallback to the legacy site_node_scores.rds alias, and analysis.windows
+# settings from config/config.yml.
 # Outputs: candidate_windows, window_summary, and window_node_summary as CSV/RDS
 # files under outputs/tables/.
+# This is legacy panel-selection infrastructure and is the next stage to be
+# redesigned after the stage 01-03 cleanup.
 # Run directly after scripts/02_score_snps.R.
 
 source("R/window_scoring.R")
+source("R/script_utils.R")
 
 parse_window_steps <- function(steps) {
   if (is.null(steps)) {
@@ -32,16 +36,12 @@ table_dir <- file.path(config$paths$outputs, "tables")
 dir.create(table_dir, recursive = TRUE, showWarnings = FALSE)
 
 precomputed_path <- file.path(processed_dir, "precomputed.rds")
-score_path <- file.path(table_dir, "site_node_scores.rds")
 if (!file.exists(precomputed_path)) {
   stop("Missing ", precomputed_path, ". Run scripts/01_preprocess_alignment_tree.R first.", call. = FALSE)
 }
-if (!file.exists(score_path)) {
-  stop("Missing ", score_path, ". Run scripts/02_score_snps.R first.", call. = FALSE)
-}
 
 pre <- readRDS(precomputed_path)
-site_node_scores <- readRDS(score_path)
+site_node_scores <- read_table_output(table_dir, "site_node_scores_all", "scripts/02_score_snps.R", fallback_stems = "site_node_scores")
 alignment_length <- ncol(pre$aln_int)
 window_cfg <- config$analysis$windows
 if (is.null(window_cfg)) {

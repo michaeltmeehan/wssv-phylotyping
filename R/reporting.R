@@ -1,13 +1,17 @@
 read_optional_output <- function(table_dir, stem) {
-  rds_path <- file.path(table_dir, paste0(stem, ".rds"))
-  csv_path <- file.path(table_dir, paste0(stem, ".csv"))
-  if (file.exists(rds_path)) {
-    return(list(data = readRDS(rds_path), path = rds_path, missing = FALSE))
+  stems <- unique(as.character(stem))
+  stems <- stems[!is.na(stems) & nzchar(stems)]
+  for (current_stem in stems) {
+    rds_path <- file.path(table_dir, paste0(current_stem, ".rds"))
+    csv_path <- file.path(table_dir, paste0(current_stem, ".csv"))
+    if (file.exists(rds_path)) {
+      return(list(data = readRDS(rds_path), path = rds_path, missing = FALSE))
+    }
+    if (file.exists(csv_path)) {
+      return(list(data = read.csv(csv_path, stringsAsFactors = FALSE), path = csv_path, missing = FALSE))
+    }
   }
-  if (file.exists(csv_path)) {
-    return(list(data = read.csv(csv_path, stringsAsFactors = FALSE), path = csv_path, missing = FALSE))
-  }
-  list(data = NULL, path = csv_path, missing = TRUE)
+  list(data = NULL, path = file.path(table_dir, paste0(stems[[1L]], ".csv")), missing = TRUE)
 }
 
 table_or_note <- function(x, columns = NULL, n = 10L, missing_note = "Missing output.") {
@@ -75,15 +79,20 @@ numeric_summary <- function(x) {
 }
 
 interpret_signal_concentration <- function(site_summary, top_n = 10L) {
-  if (is.null(site_summary) || nrow(site_summary) == 0L || !"weighted_gain_sum" %in% names(site_summary)) {
+  score_col <- if (!is.null(site_summary) && "weighted_normalized_gain_sum" %in% names(site_summary)) {
+    "weighted_normalized_gain_sum"
+  } else {
+    "weighted_gain_sum"
+  }
+  if (is.null(site_summary) || nrow(site_summary) == 0L || !score_col %in% names(site_summary)) {
     return("SNP concentration could not be assessed because site summary output was unavailable.")
   }
-  total <- sum(site_summary$weighted_gain_sum, na.rm = TRUE)
+  total <- sum(site_summary[[score_col]], na.rm = TRUE)
   if (total <= 0) {
     return("Weighted SNP signal is zero or unavailable, so concentration could not be assessed.")
   }
-  ordered <- site_summary[order(-site_summary$weighted_gain_sum), , drop = FALSE]
-  share <- sum(utils::head(ordered$weighted_gain_sum, top_n), na.rm = TRUE) / total
+  ordered <- site_summary[order(-site_summary[[score_col]]), , drop = FALSE]
+  share <- sum(utils::head(ordered[[score_col]], top_n), na.rm = TRUE) / total
   if (share >= 0.5) {
     paste0("Signal is relatively concentrated: the top ", min(top_n, nrow(ordered)), " sites account for about ", round(100 * share, 1), "% of total weighted gain.")
   } else {

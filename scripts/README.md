@@ -41,7 +41,9 @@ Milestone scripts are runnable from the repository root:
   configured widths, aggregates site-node scores, and writes
   `outputs/tables/candidate_windows.csv`,
   `outputs/tables/window_summary.csv`, and
-  `outputs/tables/window_node_summary.csv`.
+  `outputs/tables/window_node_summary.csv`. This and the later panel-selection
+  stages are the legacy assay-oriented path that will be redesigned after the
+  stage 01-03 cleanup.
 - `05_select_marker_panel.R` filters scored windows, greedily selects
   complementary non-redundant windows, compares simple weighted-gain baselines,
   and writes `outputs/tables/selected_panel.csv`,

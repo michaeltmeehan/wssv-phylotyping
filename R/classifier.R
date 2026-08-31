@@ -4,7 +4,9 @@ classifier_allele_codes <- c(A = 1L, C = 2L, G = 3L, T = 4L)
 #'
 #' Builds node-specific SNP rules from the selected panel or full informative
 #' catalogue, applies minimum rule-count filters, and stores classification
-#' thresholds used by complete and partial genome prediction.
+#' thresholds used by complete and partial genome prediction. The `target_mask`
+#' argument is a compatibility name for the node-by-tip clade mask used by the
+#' classifier.
 train_classifier <- function(aln_int, target_mask, node_metadata, site_node_scores,
                              selected_panel = NULL, use_selected_panel = TRUE,
                              panel_size = NULL, min_sites_per_node = 1L,
@@ -21,28 +23,29 @@ train_classifier <- function(aln_int, target_mask, node_metadata, site_node_scor
     rownames(target_mask) <- as.character(node_metadata$node_id)
   }
 
+  clade_mask <- target_mask
   rules <- make_classifier_rules(site_node_scores, selected_panel, use_selected_panel, panel_size)
   if (nrow(rules) > 0L) {
     rules <- merge(
-      rules,
-      node_metadata[, intersect(c("node_id", "node_index", "clade_size", "complement_size", "depth", "weight"), names(node_metadata)), drop = FALSE],
-      by = "node_id",
-      all.x = TRUE,
-      sort = FALSE,
-      suffixes = c("", "_node")
-    )
+    rules,
+    node_metadata[, intersect(c("node_id", "node_index", "clade_size", "complement_size", "depth", "weight"), names(node_metadata)), drop = FALSE],
+    by = "node_id",
+    all.x = TRUE,
+    sort = FALSE,
+    suffixes = c("", "_node")
+  )
     site_counts <- aggregate(site ~ node_id, rules, function(x) length(unique(x)))
     keep_nodes <- site_counts$node_id[site_counts$site >= as.integer(min_sites_per_node)]
     rules <- rules[rules$node_id %in% keep_nodes, , drop = FALSE]
   }
 
-  node_table <- make_classifier_node_table(target_mask, node_metadata, rules)
+  node_table <- make_classifier_node_table(clade_mask, node_metadata, rules)
   structure(
     list(
       version = 1L,
       rules = rules,
       node_table = node_table,
-      target_mask = target_mask[match(node_table$node_id, rownames(target_mask)), , drop = FALSE],
+      target_mask = clade_mask[match(node_table$node_id, rownames(clade_mask)), , drop = FALSE],
       informative_sites = sort(unique(as.integer(rules$site))),
       tip_names = rownames(aln_int),
       alignment_length = ncol(aln_int),

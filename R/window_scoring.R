@@ -114,7 +114,10 @@ assign_snps_to_windows <- function(sites, windows) {
 #' Aggregate informative SNP scores by window and node.
 #'
 #' The output feeds panel selection by showing which nodes each window helps and
-#' how much weighted signal the window contributes.
+#' how much weighted signal the window contributes. The `weight` field is the
+#' legacy node-weight compatibility value from stage 01 metadata, while the SNP
+#' score comes from stage-02 `normalized_gain`; neither should be confused with
+#' classifier support thresholds.
 aggregate_window_node_scores <- function(windows, site_node_scores, informative_assignments = NULL) {
   if (is.null(informative_assignments)) {
     informative_assignments <- assign_snps_to_windows(site_node_scores$site, windows)

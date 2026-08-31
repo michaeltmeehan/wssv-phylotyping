@@ -136,7 +136,8 @@ score_snp_sites <- function(aln_int, target_mask, node_metadata, sites,
 # separate concepts in this repository. Posterior support comes from the tree
 # metadata and describes phylogenetic credibility. The summaries below rank SNP
 # discriminatory gain only; later classifier support is derived elsewhere from
-# the selected rules and should not be conflated with tree support.
+# the selected rules and should not be conflated with tree support or with the
+# classifier thresholds named `min_support` and `max_conflict`.
 
 best_summary_row <- function(x) {
   x[order(-x$normalized_gain, -x$gain, x$node_id, x$node_index), , drop = FALSE][1L, ]
@@ -165,6 +166,7 @@ make_site_summary <- function(site_node_scores, site_map = NULL, n_tip = NULL,
     )
     out[[helped_count_name]] <- integer()
     out$weighted_gain_sum <- numeric()
+    out$weighted_normalized_gain_sum <- numeric()
     out$legacy_weighted_gain_sum <- numeric()
     out$missing_sequences_mean <- numeric()
     out$missing_sequences_min <- integer()
@@ -210,6 +212,7 @@ make_site_summary <- function(site_node_scores, site_map = NULL, n_tip = NULL,
       NA_real_
     }
   }, numeric(1L))
+  out$weighted_normalized_gain_sum <- out$weighted_gain_sum
   out$legacy_weighted_gain_sum <- out$weighted_gain_sum
   if (!is.null(n_tip)) {
     out$missing_sequences_mean <- n_tip - out$observed_sequences_mean

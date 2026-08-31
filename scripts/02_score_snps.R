@@ -30,11 +30,11 @@ if (!file.exists(precomputed_path)) {
 pre <- readRDS(precomputed_path)
 sites <- pre$polymorphic_sites
 
-score_clade_set <- function(label, target_mask, node_metadata, output_path) {
-  message("  scoring ", label, " nodes: ", nrow(target_mask))
+score_clade_set <- function(label, clade_mask, node_metadata, output_path) {
+  message("  scoring ", label, " clades: ", nrow(clade_mask))
   scores <- score_snp_sites(
     aln_int = pre$aln_int,
-    target_mask = target_mask,
+    target_mask = clade_mask,
     node_metadata = node_metadata,
     sites = sites,
     min_total_obs = config$analysis$min_total_obs,
@@ -61,13 +61,13 @@ legacy_score_path <- file.path(table_dir, "site_node_scores.rds")
 
 site_node_scores_all <- score_clade_set(
   label = "diagnostic",
-  target_mask = pre$all_clade_mask,
+  clade_mask = pre$all_clade_mask,
   node_metadata = pre$all_node_metadata,
   output_path = all_score_path
 )
 site_node_scores_targets <- score_clade_set(
   label = "target",
-  target_mask = pre$target_clade_mask,
+  clade_mask = pre$target_clade_mask,
   node_metadata = pre$target_node_metadata,
   output_path = target_score_path
 )

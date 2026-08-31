@@ -6,6 +6,8 @@
 # analysis.panel_selection settings from config/config.yml.
 # Outputs: selected_panel, selected_panel_steps, panel_node_coverage, and
 # panel_summary as CSV/RDS files under outputs/tables/.
+# This remains part of the legacy assay-oriented panel-selection path that will
+# be revisited after the stage 01-03 naming cleanup.
 # Run directly after scripts/04_score_windows.R.
 
 source("R/panel_selection.R")

@@ -130,6 +130,8 @@ test_that("stage 03 summaries split all and target clades with transparent order
   expect_equal(site_summary_all$best_direction, c("clade", "outside"))
   expect_equal(site_summary_all$missing_sequences_mean, c(2, 2))
   expect_true("legacy_weighted_gain_sum" %in% names(site_summary_all))
+  expect_true("weighted_normalized_gain_sum" %in% names(site_summary_all))
+  expect_equal(site_summary_all$weighted_normalized_gain_sum, site_summary_all$weighted_gain_sum)
 
   expect_equal(site_summary_targets$site, c(20L, 10L))
   expect_equal(site_summary_targets$target_clades_helped, c(2L, 2L))

@@ -6,6 +6,8 @@
 # any CSV/RDS tables already written under outputs/tables/.
 # Outputs: outputs/reports/wssv_phylotyping_report.md plus compact report_*.csv
 # extracts under outputs/tables/.
+# The report is aware of the stage 04+ legacy assay-oriented workflow but does
+# not redesign it.
 # Run directly after any completed subset of stages; missing upstream outputs
 # are reported in the Markdown instead of being recomputed.
 
@@ -27,9 +29,11 @@ pre_path <- file.path(processed_dir, "precomputed.rds")
 pre <- if (file.exists(pre_path)) readRDS(pre_path) else NULL
 
 tables <- list(
-  site_node_scores = read_optional_output(table_dir, "site_node_scores"),
-  site_summary = read_optional_output(table_dir, "site_summary"),
-  node_summary = read_optional_output(table_dir, "node_summary"),
+  site_node_scores = read_optional_output(table_dir, c("site_node_scores_all", "site_node_scores")),
+  site_summary = read_optional_output(table_dir, c("site_summary_all", "site_summary")),
+  node_summary = read_optional_output(table_dir, c("node_summary_all", "node_summary")),
+  site_summary_targets = read_optional_output(table_dir, "site_summary_targets"),
+  node_summary_targets = read_optional_output(table_dir, "node_summary_targets"),
   target_clade_diagnostics = read_optional_output(table_dir, "target_clade_diagnostics"),
   target_clade_strongest_snps = read_optional_output(table_dir, "target_clade_strongest_snps"),
   candidate_windows = read_optional_output(table_dir, "candidate_windows"),
@@ -77,7 +81,12 @@ partial_files <- if (!is.null(partial_dir) && dir.exists(partial_dir)) {
 }
 
 if (!is.null(data$site_summary)) {
-  top_sites <- data$site_summary[order(-data$site_summary$weighted_gain_sum, -data$site_summary$nodes_helped), , drop = FALSE]
+  site_score_col <- if ("weighted_normalized_gain_sum" %in% names(data$site_summary)) {
+    "weighted_normalized_gain_sum"
+  } else {
+    "weighted_gain_sum"
+  }
+  top_sites <- data$site_summary[order(-data$site_summary[[site_score_col]], -data$site_summary$nodes_helped), , drop = FALSE]
   invisible(write_report_extract(top_sites, file.path(table_dir, "report_top_sites.csv"), n = 50L))
 }
 if (!is.null(data$window_summary)) {
@@ -92,8 +101,8 @@ final_covered_nodes <- if (is.null(data$selected_panel) || nrow(data$selected_pa
   ids <- unlist(strsplit(paste(data$selected_panel$new_node_ids, collapse = ";"), ";", fixed = TRUE))
   unique(ids[nzchar(ids)])
 }
-eligible_node_ids <- if (!is.null(pre) && !is.null(pre$node_metadata) && "node_id" %in% names(pre$node_metadata)) {
-  as.character(pre$node_metadata$node_id)
+eligible_node_ids <- if (!is.null(pre) && !is.null(pre$all_node_metadata) && "node_id" %in% names(pre$all_node_metadata)) {
+  as.character(pre$all_node_metadata$node_id)
 } else {
   character()
 }
@@ -112,7 +121,8 @@ lines <- c(
   paste0("- Input tree: `", config$paths$tree, "`"),
   paste0("- Retained tips: ", if (is.null(pre)) "missing precomputed output" else nrow(pre$aln_int)),
   paste0("- Alignment length: ", if (is.null(pre)) "missing precomputed output" else ncol(pre$aln_int)),
-  paste0("- Eligible internal nodes: ", if (is.null(pre)) "missing precomputed output" else nrow(pre$target_mask)),
+  paste0("- Diagnostic clades: ", if (is.null(pre)) "missing precomputed output" else nrow(pre$all_clade_mask)),
+  paste0("- Target clades: ", if (is.null(pre)) "missing precomputed output" else nrow(pre$target_clade_mask)),
   paste0("- Polymorphic sites: ", if (is.null(pre)) "missing precomputed output" else length(pre$polymorphic_sites)),
   paste0("- Informative/scored node-site pairs: ", safe_nrow(data$site_node_scores)),
   paste0("- Candidate windows: ", safe_nrow(data$candidate_windows)),
@@ -123,7 +133,7 @@ lines <- c(
   "",
   "Top SNPs by weighted gain:",
   "",
-  table_or_note(data$site_summary, c("site", "nodes_helped", "weighted_gain_sum", "gain_max", "normalized_gain_max"), missing_note = missing_note("site_summary")),
+  table_or_note(data$site_summary, c("site", "nodes_helped", "weighted_normalized_gain_sum", "weighted_gain_sum", "gain_max", "normalized_gain_max"), missing_note = missing_note("site_summary")),
   "",
   "Top nodes by number of helpful SNPs:",
   "",
@@ -131,7 +141,7 @@ lines <- c(
   "",
   interpret_signal_concentration(data$site_summary),
   "",
-  "Missingness is available mainly in window-level outputs; site-level missingness is not currently written in `site_summary.csv`.",
+  "Missingness is available mainly in window-level outputs; site-level missingness is not currently written in `site_summary_all.csv`.",
   "",
   "## Target-Clade Viability Checkpoint",
   "",

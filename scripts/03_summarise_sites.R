@@ -12,9 +12,10 @@
 # - outputs/tables/target_clade_strongest_snps.csv
 # Legacy compatibility aliases are also written to outputs/tables/site_summary.csv
 # and outputs/tables/node_summary.csv for the full diagnostic set.
-# Use tree posterior support as descriptive metadata only; site ranking is based
-# on SNP discriminatory gain, not phylogenetic support or later classifier
-# evidence.
+# Keep tree posterior support, SNP gain/normalized gain, and classifier support
+# thresholds separate: posterior_support is tree metadata, gain and
+# normalized_gain are stage-02 SNP scores, and later classifier `min_support`
+# thresholds are evidence filters used downstream.
 # Run directly after scripts/02_score_snps.R.
 
 source("R/snp_scoring.R")
@@ -76,7 +77,8 @@ write.csv(node_summary_all, file.path(table_dir, "node_summary.csv"), row.names 
 message("Summaries complete")
 message("  tips: ", nrow(pre$aln_int))
 message("  sites: ", ncol(pre$aln_int))
-message("  eligible internal nodes: ", nrow(pre$target_mask))
+message("  diagnostic clades scored: ", nrow(pre$all_clade_mask))
+message("  target clades scored: ", nrow(pre$target_clade_mask))
 message("  polymorphic sites: ", length(pre$polymorphic_sites))
 message("  scored node-site pairs (all): ", nrow(site_node_scores_all))
 message("  scored node-site pairs (targets): ", nrow(site_node_scores_targets))

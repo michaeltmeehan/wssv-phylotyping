@@ -25,4 +25,7 @@ classification with explicit unmapped, weak, conflicting, unresolved,
 no-observed-signal, and no-informative-site outcomes. Partial classification
 supports panel, opportunistic, and auto modes; opportunistic classifications use
 all scored informative SNPs within each mapped interval and are reported
-separately from designed-panel classifier calls.
+separately from designed-panel classifier calls. The `weight` column in node
+metadata is kept as a legacy compatibility field for now; use
+`posterior_support` for tree credibility and SNP `gain` / `normalized_gain` for
+stage-02 marker scoring.

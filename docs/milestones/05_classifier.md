@@ -19,13 +19,13 @@ encoded WSSV sequences to MCC-tree clades using only observed informative sites.
 - `outputs/tables/classifier_tip_predictions.csv`.
 - `outputs/tables/classifier_node_evidence.csv` when the table is compact enough.
 - Prediction diagnostics including assigned node, depth, observed informative
-  sites, nodes evaluated, support, competitor support, status, and per-node
-  evidence.
+  sites, nodes evaluated, classifier support, competitor support, status, and
+  per-node evidence.
 
 ## Success Criteria
 
 - Classifiers use only observed informative sites in a query sequence.
-- The tree-path classifier stops when support is insufficient.
-- Predictions include assigned clade, support, alternative clades, sites used, and status.
+- The tree-path classifier stops when classifier support is insufficient.
+- Predictions include assigned clade, classifier support, alternative clades, sites used, and status.
 - Training-set predictions are labelled as internal sanity checks, not
   independent validation.

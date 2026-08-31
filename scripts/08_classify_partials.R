@@ -4,10 +4,13 @@
 # classify them with the trained panel classifier and/or opportunistic SNP
 # evidence, depending on config.
 # Inputs: outputs/models/wssv_classifier.rds, data/processed/precomputed.rds,
-# optional site_node_scores for opportunistic/auto mode, raw partial FASTA files,
-# and analysis.partials settings, including reference_id, from config/config.yml.
+# optional site_node_scores_all with fallback to the legacy site_node_scores
+# alias for opportunistic/auto mode, raw partial FASTA files, and
+# analysis.partials settings, including reference_id, from config/config.yml.
 # Outputs: partial classification, evidence, site-evidence, and mapping
 # diagnostics tables under outputs/tables/.
+# This remains part of the legacy assay-oriented workflow that will be revisited
+# after the stage 01-03 naming cleanup.
 # Run directly after scripts/07_train_classifier.R when partial genomes are
 # available. It also writes empty well-formed tables if none are present.
 
@@ -63,7 +66,6 @@ safe_save_rds <- function(x, path) {
 
 precomputed_path <- file.path(processed_dir, "precomputed.rds")
 classifier_path <- file.path(model_dir, "wssv_classifier.rds")
-site_node_scores_path <- file.path(table_dir, "site_node_scores.rds")
 if (!file.exists(precomputed_path)) {
   stop("Missing ", precomputed_path, ". Run scripts/01_preprocess_alignment_tree.R first.", call. = FALSE)
 }
@@ -90,12 +92,9 @@ opportunistic_settings <- list(
   use_weighted_support = isTRUE(value_or(partial_cfg$use_weighted_support, TRUE))
 )
 write_unresolved_evidence <- isTRUE(value_or(partial_cfg$write_unresolved_evidence, FALSE))
-site_node_scores <- NULL
+site_node_scores_all <- NULL
 if (classification_mode %in% c("opportunistic", "auto")) {
-  if (!file.exists(site_node_scores_path)) {
-    stop("Missing ", site_node_scores_path, ". Run scripts/02_score_snps.R first.", call. = FALSE)
-  }
-  site_node_scores <- readRDS(site_node_scores_path)
+  site_node_scores_all <- read_table_output(table_dir, "site_node_scores_all", "scripts/02_score_snps.R", fallback_stems = "site_node_scores")
 }
 
 partials <- read_partial_fastas(partial_dir, extensions)
@@ -145,7 +144,7 @@ classified <- classify_mapped_partials(
   min_total_informative_sites = min_observed_informative_sites,
   write_unresolved_evidence = write_unresolved_evidence,
   classification_mode = classification_mode,
-  site_node_scores = site_node_scores,
+  site_node_scores = site_node_scores_all,
   opportunistic_settings = opportunistic_settings
 )
 

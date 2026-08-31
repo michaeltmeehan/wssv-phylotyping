@@ -52,7 +52,7 @@ Compare each run against baseline using the same set of outputs:
 
 | Question | Output to inspect | What to prefer |
 |---|---|---|
-| Did SNP scoring become too sparse? | `site_summary.csv`, `node_summary.csv` | Enough scored SNPs across multiple nodes, not just one strong site. |
+| Did SNP scoring become too sparse? | `site_summary_all.csv`, `node_summary_all.csv` | Enough scored SNPs across multiple nodes, not just one strong site. |
 | Did windows become too sparse or too broad? | `window_summary.csv` | Windows with useful signal and acceptable missingness. |
 | Does the panel add complementary signal? | `selected_panel_steps.csv`, `panel_summary.csv` | Positive marginal gain across early panel steps. |
 | Does validation retain signal? | `validation_panel_summary.csv` | Higher observed informative sites/nodes and resolved fraction, without relying only on random luck. |

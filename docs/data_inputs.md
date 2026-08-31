@@ -35,7 +35,7 @@ data/raw/tree/41SEQSUPDATEDEDITEDMCC
 Expected format:
 
 - Newick or Nexus tree readable by `ape::read.tree()` or `ape::read.nexus()`.
-- BEAST-annotated MCC trees should retain internal-node posterior support in `posterior=` comment annotations; the preprocessing stage will import those values into node labels and node metadata.
+- BEAST-annotated MCC trees should retain internal-node posterior support in `posterior=` comment annotations; the preprocessing stage will import those values into node labels and node metadata as `posterior_support`.
 - Tip labels should correspond to alignment sequence names.
 - The tree should represent the complete-genome set used for scoring.
 
@@ -85,3 +85,4 @@ Metadata files are reserved for sample, accession, collection, or source informa
 - Alignment sequence names and tree tip labels are the critical names for complete-genome stages.
 - Partial FASTA headers are used to create `sequence_id` and accession-like fields where possible.
 - Output tables refer to tree nodes by numeric/string `node_id` values derived from the tree object, not by biological clade names.
+- `posterior_support` is tree credibility metadata, while SNP `gain` / `normalized_gain` are stage-02 scores and classifier `min_support` thresholds are later evidence filters. Keep those terms separate when reviewing outputs.

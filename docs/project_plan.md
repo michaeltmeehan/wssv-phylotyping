@@ -34,11 +34,15 @@ Primary outputs:
 - `outputs/tables/site_node_scores_all.rds`
 - `outputs/tables/site_node_scores_targets.rds`
 - `outputs/tables/site_node_scores.rds` (legacy alias for the full diagnostic set)
-- `outputs/tables/site_summary.csv`
+- `outputs/tables/site_summary_all.csv`
+- `outputs/tables/site_summary_targets.csv`
+- `outputs/tables/site_summary.csv` (legacy alias for the full diagnostic set)
 
 ## Stage 2: Window Scoring
 
 Aggregate site-level signal into candidate genomic windows. Candidate windows may include fixed sliding windows, SNP-centred windows, known marker regions, GenBank-covered regions, and future primer-compatible amplicons.
+
+This and the later panel-selection stages are legacy assay-oriented scaffolding that will be redesigned after the stage 01-03 cleanup.
 
 Primary outputs:
 

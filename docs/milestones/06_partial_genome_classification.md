@@ -38,7 +38,7 @@ region-dependent assessment of arbitrary partial genomes.
 - Auto mode tries panel classification first and falls back to opportunistic
   classification only when no panel-informative sites are observed.
 - Outputs distinguish strong, weak, unresolved, conflicting, and out-of-reference calls.
-- Reports include informative sites used, mapped coordinates, assignment, support, and status.
+- Reports include informative sites used, mapped coordinates, assignment, classifier support, and status.
 - Partial mapping reports strand, identity, query coverage, aligned length, and
   reference/alignment coordinate spans when local alignment is used.
 - Reports warn that opportunistic calls are region-dependent and are not

@@ -2,10 +2,13 @@
 
 # Stage 07: train the conservative tree-path classifier and run training-tip
 # sanity checks against the known MCC-tree paths.
-# Inputs: precomputed data, site_node_scores, selected_panel, and
-# analysis.classifier settings from config/config.yml.
+# Inputs: precomputed data, site_node_scores_all with fallback to the legacy
+# site_node_scores alias, selected_panel, and analysis.classifier settings from
+# config/config.yml.
 # Outputs: outputs/models/wssv_classifier.rds plus classifier_training_summary,
 # classifier_tip_predictions, and optional classifier_node_evidence tables.
+# This remains part of the legacy assay-oriented workflow that will be
+# reconsidered after the stage 01-03 naming cleanup.
 # Run directly after scripts/05_select_marker_panel.R; validation is strongly
 # recommended before interpreting the classifier.
 
@@ -30,7 +33,7 @@ if (!file.exists(precomputed_path)) {
 }
 
 pre <- readRDS(precomputed_path)
-site_node_scores <- read_table_output(table_dir, "site_node_scores", "scripts/02_score_snps.R")
+site_node_scores_all <- read_table_output(table_dir, "site_node_scores_all", "scripts/02_score_snps.R", fallback_stems = "site_node_scores")
 selected_panel <- read_table_output(table_dir, "selected_panel", "scripts/05_select_marker_panel.R")
 
 classifier_cfg <- config$analysis$classifier
@@ -51,9 +54,9 @@ message("  panel windows used: ", if (use_selected_panel) min(as.integer(panel_s
 
 classifier <- train_classifier(
   aln_int = pre$aln_int,
-  target_mask = pre$target_mask,
-  node_metadata = pre$node_metadata,
-  site_node_scores = site_node_scores,
+  target_mask = pre$target_clade_mask,
+  node_metadata = pre$target_node_metadata,
+  site_node_scores = site_node_scores_all,
   selected_panel = selected_panel,
   use_selected_panel = use_selected_panel,
   panel_size = as.integer(panel_size),
@@ -64,14 +67,14 @@ classifier <- train_classifier(
   support_margin = as.numeric(value_or(classifier_cfg$support_margin, 0.05))
 )
 
-training_tip_diagnostics <- function(tip, prediction, target_mask, node_metadata, min_support, max_conflict) {
-  tip_col <- match(tip, colnames(target_mask))
+training_tip_diagnostics <- function(tip, prediction, target_clade_mask, target_clade_metadata, min_support, max_conflict) {
+  tip_col <- match(tip, colnames(target_clade_mask))
   if (is.na(tip_col)) {
     stop("Tip not found in target mask: ", tip, call. = FALSE)
   }
-  metadata <- node_metadata
+  metadata <- target_clade_metadata
   metadata$node_id <- as.character(metadata$node_id)
-  true_ids <- as.character(rownames(target_mask)[target_mask[, tip_col]])
+  true_ids <- as.character(rownames(target_clade_mask)[target_clade_mask[, tip_col]])
   true_meta <- metadata[metadata$node_id %in% true_ids, , drop = FALSE]
   true_meta <- true_meta[order(true_meta$depth, true_meta$clade_size, true_meta$node_id), , drop = FALSE]
   true_path <- true_meta$node_id
@@ -131,8 +134,8 @@ for (i in seq_len(nrow(pre$aln_int))) {
   diagnostic_rows[[i]] <- training_tip_diagnostics(
     tip,
     pred,
-    pre$target_mask,
-    pre$node_metadata,
+    pre$target_clade_mask,
+    pre$target_node_metadata,
     classifier$settings$min_support,
     classifier$settings$max_conflict
   )
@@ -185,7 +188,7 @@ if (nrow(node_evidence) <= 1000000L) {
 
 message("Classifier training complete")
 message("  wrote model: ", classifier_path)
-message("  candidate node-site score rows read: ", nrow(site_node_scores))
+  message("  candidate node-site score rows read: ", nrow(site_node_scores_all))
 message("  rules: ", nrow(classifier$rules))
 message("  classifier nodes retained: ", nrow(classifier$node_table))
 message("  informative sites: ", length(classifier$informative_sites))

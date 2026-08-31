@@ -34,7 +34,7 @@ Or list the individual scripts run:
 
 | Output | Main observation |
 |---|---|
-| `outputs/tables/site_summary.csv` |  |
+| `outputs/tables/site_summary_all.csv` |  |
 | `outputs/tables/window_summary.csv` |  |
 | `outputs/tables/selected_panel.csv` |  |
 | `outputs/tables/panel_summary.csv` |  |
