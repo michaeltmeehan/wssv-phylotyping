@@ -8,6 +8,8 @@
 # - outputs/tables/node_summary_all.csv
 # - outputs/tables/site_summary_targets.csv
 # - outputs/tables/node_summary_targets.csv
+# - outputs/tables/target_clade_diagnostics.csv
+# - outputs/tables/target_clade_strongest_snps.csv
 # Legacy compatibility aliases are also written to outputs/tables/site_summary.csv
 # and outputs/tables/node_summary.csv for the full diagnostic set.
 # Use tree posterior support as descriptive metadata only; site ranking is based
@@ -16,6 +18,7 @@
 # Run directly after scripts/02_score_snps.R.
 
 source("R/snp_scoring.R")
+source("R/target_diagnostics.R")
 
 if (!requireNamespace("yaml", quietly = TRUE)) {
   stop("Package 'yaml' is required to read config/config.yml.", call. = FALSE)
@@ -56,11 +59,14 @@ site_summary_targets <- make_site_summary(
   helped_count_name = "target_clades_helped"
 )
 node_summary_targets <- make_node_summary(site_node_scores_targets, pre$target_node_metadata)
+target_checkpoint <- make_target_clade_checkpoint(pre, site_node_scores_targets, top_n = 3L)
 
 write.csv(site_summary_all, file.path(table_dir, "site_summary_all.csv"), row.names = FALSE)
 write.csv(node_summary_all, file.path(table_dir, "node_summary_all.csv"), row.names = FALSE)
 write.csv(site_summary_targets, file.path(table_dir, "site_summary_targets.csv"), row.names = FALSE)
 write.csv(node_summary_targets, file.path(table_dir, "node_summary_targets.csv"), row.names = FALSE)
+write.csv(target_checkpoint$summary, file.path(table_dir, "target_clade_diagnostics.csv"), row.names = FALSE)
+write.csv(target_checkpoint$strongest_snps, file.path(table_dir, "target_clade_strongest_snps.csv"), row.names = FALSE)
 
 # Backward-compatible aliases for downstream scripts and report generation that
 # still expect the legacy full-diagnostic filenames.
@@ -78,3 +84,7 @@ message("  site summary rows (all): ", nrow(site_summary_all))
 message("  node summary rows (all): ", nrow(node_summary_all))
 message("  site summary rows (targets): ", nrow(site_summary_targets))
 message("  node summary rows (targets): ", nrow(node_summary_targets))
+message("  target-clade diagnostics rows: ", nrow(target_checkpoint$summary))
+message("  target-clade strongest SNP rows: ", nrow(target_checkpoint$strongest_snps))
+message("  wrote: ", file.path(table_dir, "target_clade_diagnostics.csv"))
+message("  wrote: ", file.path(table_dir, "target_clade_strongest_snps.csv"))

@@ -10,12 +10,13 @@ Plain-language summary:
 
 1. Match the raw alignment and tree so they contain the same genomes.
 2. Find polymorphic sites and score SNPs that help distinguish tree clades.
-3. Combine useful SNPs into genomic windows.
-4. Select a small panel of complementary marker windows.
-5. Check how much signal the selected panel retains in complete genomes.
-6. Train a tree-path classifier from the selected panel or scored SNPs.
-7. Classify partial genomes if they can be mapped and contain enough observed informative sites.
-8. Generate a lightweight Markdown report from the outputs.
+3. Review the stage-03 target-clade checkpoint to see whether the four-clade simplification is viable before window or primer-panel design.
+4. Combine useful SNPs into genomic windows.
+5. Select a small panel of complementary marker windows.
+6. Check how much signal the selected panel retains in complete genomes.
+7. Train a tree-path classifier from the selected panel or scored SNPs.
+8. Classify partial genomes if they can be mapped and contain enough observed informative sites.
+9. Generate a lightweight Markdown report from the outputs.
 
 The numbered scripts in `scripts/` are the canonical workflow stages. The simplest baseline command is:
 

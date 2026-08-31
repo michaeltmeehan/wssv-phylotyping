@@ -1,6 +1,7 @@
 source(test_path("../../R/encoding.R"))
 source(test_path("../../R/tree_utils.R"))
 source(test_path("../../R/snp_scoring.R"))
+source(test_path("../../R/target_diagnostics.R"))
 
 test_that("polymorphic sites ignore ambiguous and missing bases", {
   alignment <- c(a = "AN", b = "A-", c = "CN")
@@ -141,4 +142,66 @@ test_that("stage 03 summaries split all and target clades with transparent order
   expect_equal(node_summary_targets$best_site, c(20L, 10L))
   expect_equal(node_summary_targets$best_raw_gain, c(0.85, 0.25))
   expect_equal(node_summary_targets$best_normalized_gain, c(0.70, 0.60))
+})
+
+test_that("target-clade checkpoint keeps all configured targets and surfaces strongest SNPs", {
+  pre <- list(
+    aln_int = matrix(0L, nrow = 5L, ncol = 3L),
+    site_map = data.frame(
+      site = c(1L, 2L, 3L),
+      alignment_position = c(101L, 102L, 103L)
+    ),
+    polymorphic_sites = c(1L, 2L, 3L),
+    target_node_metadata = data.frame(
+      node_index = c(1L, 2L, 3L),
+      node_id = c(11L, 12L, 13L),
+      posterior_support = c(0.95, 0.91, 0.99),
+      clade_size = c(3L, 2L, 2L),
+      complement_size = c(2L, 3L, 3L),
+      depth = c(0.4, 0.8, 0.6),
+      balance = c(0.5, 0.4, 0.4),
+      weight = c(0.18, 0.10, 0.08)
+    ),
+    target_clades = list(
+      target_clade_spec = list(
+        list(target_name = "Alpha"),
+        list(node_id = 12L),
+        list(target_name = "Gamma")
+      )
+    )
+  )
+  site_node_scores_targets <- data.frame(
+    node_index = c(1L, 1L, 2L),
+    node_id = c(11L, 11L, 12L),
+    site = c(1L, 2L, 3L),
+    gain = c(0.30, 0.20, 0.40),
+    normalized_gain = c(0.60, 0.50, 0.80),
+    best_allele = c("A", "G", "T"),
+    direction = c("clade", "outside", "clade"),
+    allele_count_inside = c(2L, 1L, 1L),
+    allele_count_outside = c(0L, 0L, 1L),
+    observed_inside = c(3L, 4L, 2L),
+    observed_outside = c(2L, 1L, 3L),
+    total_observed = c(5L, 5L, 5L),
+    stringsAsFactors = FALSE
+  )
+
+  checkpoint <- make_target_clade_checkpoint(pre, site_node_scores_targets, top_n = 2L)
+
+  expect_equal(checkpoint$summary$target, c("Alpha", "node 12", "Gamma"))
+  expect_equal(checkpoint$summary$node_id, c(11L, 12L, 13L))
+  expect_equal(checkpoint$summary$informative_sites_passing_threshold, c(2L, 1L, 0L))
+  expect_equal(checkpoint$summary$polymorphic_sites_assessed, c(3L, 3L, 3L))
+  expect_equal(checkpoint$summary$best_alignment_position, c(101, 103, NA_real_))
+  expect_equal(checkpoint$summary$best_site_missing_sequences, c(0L, 0L, NA_integer_))
+  expect_equal(checkpoint$summary$max_normalized_gain, c(0.60, 0.80, NA_real_))
+  expect_equal(checkpoint$summary$mean_normalized_gain, c(0.55, 0.80, NA_real_))
+
+  expect_equal(nrow(checkpoint$strongest_snps), 3L)
+  expect_equal(checkpoint$strongest_snps$target, c("Alpha", "Alpha", "node 12"))
+  expect_equal(checkpoint$strongest_snps$rank_within_target, c(1L, 2L, 1L))
+  expect_equal(checkpoint$strongest_snps$best_rule, c("A / clade", "G / outside", "T / clade"))
+  expect_equal(round(checkpoint$strongest_snps$accuracy, 2), c(0.90, 1.00, 1.00))
+  expect_equal(round(checkpoint$strongest_snps$baseline_accuracy, 2), c(0.60, 0.80, 0.60))
+  expect_true(all(c("raw_gain", "normalized_gain", "missing_fraction") %in% names(checkpoint$strongest_snps)))
 })

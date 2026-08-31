@@ -32,9 +32,11 @@ Milestone scripts are runnable from the repository root:
   `outputs/tables/site_summary_all.csv`,
   `outputs/tables/node_summary_all.csv`,
   `outputs/tables/site_summary_targets.csv`,
-  `outputs/tables/node_summary_targets.csv`, plus the legacy compatibility
-  aliases `outputs/tables/site_summary.csv` and `outputs/tables/node_summary.csv`
-  for the full diagnostic summaries.
+  `outputs/tables/node_summary_targets.csv`, the target-clade checkpoint tables
+  `outputs/tables/target_clade_diagnostics.csv` and
+  `outputs/tables/target_clade_strongest_snps.csv`, plus the legacy
+  compatibility aliases `outputs/tables/site_summary.csv` and
+  `outputs/tables/node_summary.csv` for the full diagnostic summaries.
 - `04_score_windows.R` generates fixed and optional SNP-centred windows from
   configured widths, aggregates site-node scores, and writes
   `outputs/tables/candidate_windows.csv`,
