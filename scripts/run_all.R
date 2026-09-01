@@ -32,7 +32,7 @@ stages <- file.path(
     "02_score_snps.R",
     "03_summarise_sites.R",
     "04_score_windows.R",
-    "05_select_marker_panel.R",
+    "05_select_panel.R",
     "06_validate_panel.R",
     "07_train_classifier.R",
     "08_classify_partials.R",

@@ -48,18 +48,32 @@ analysis:
       # Adds wider SNP-centred windows to increase chances of capturing signal.
       widths: [300, 500, 1000]
   panel_selection:
-    panel_sizes: [1, 2, 3, 5, 10]
-    min_marginal_gain: 0
-    min_informative_snps: 1
-    min_total_weighted_gain: 0
+    panel_sizes: [2, 3, 4, 5, 6]
+    min_panel_size: 2
+    max_panel_size: 6
+    top_n_panels: 20
+    exact_enumeration_limit: 100000
+    max_reduced_candidates: 30
+    evidence_threshold: 0.5
+    strong_evidence_threshold: 0.8
+    max_candidate_length: 3000
+    min_complete_fraction: 0.9
     max_missing_fraction: null
-    permitted_widths: null
-    # Allows some overlap so useful nearby windows are not excluded too early.
+    require_left_flank_conserved: false
+    require_right_flank_conserved: false
+    require_both_flanks_conserved: false
+    min_target_signal: null
+    min_targets_with_signal: null
+    min_targets_with_strong_signal: null
+    max_ambiguity_fraction: null
+    max_gap_fraction: null
     max_allowed_overlap: 0.25
     min_distance: null
-    exclude_near_duplicates: false
-    cap_repeated_coverage: true
-    repeated_node_credit: 0
+    dominance_overlap_threshold: 0.85
+    dominance_min_distance: 100
+    local_redundancy_overlap_threshold: 0.9
+    local_redundancy_min_distance: 100
+    target_gain_round_digits: 3
   validation:
     panel_sizes: [1, 2, 3, 5, 10]
     fragment_lengths: [300, 500, 1000, 2000, 5000]

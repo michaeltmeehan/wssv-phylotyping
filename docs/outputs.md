@@ -18,10 +18,19 @@ Generated files are written under `data/processed/` and `outputs/`. They are saf
 | `outputs/tables/candidate_amplicon_target_scores.csv` | Stage 04 | One row per candidate amplicon and primary target clade with target-specific gain summaries. | Diagnostic/intermediate | To inspect which clades contribute signal to each candidate region. | Yes |
 | `outputs/tables/candidate_amplicon_snps.csv` | Stage 04 | One row per candidate amplicon, target clade, and informative SNP association. | Diagnostic/intermediate | To audit the exact SNPs supporting each region. | Yes |
 | `outputs/figures/candidate_amplicons_spatial.png` | Stage 04 | Simple spatial diagnostic of informative SNPs and candidate amplicons. | Diagnostic figure | To see SNP clustering along the genome at a glance. | Yes |
-| `outputs/tables/selected_panel.csv` | Stage 05 | Greedy selected marker windows in order. | Legacy final candidate panel | Always inspect after panel tuning. | Yes |
-| `outputs/tables/selected_panel_steps.csv` | Stage 05 | Marginal gain and cumulative gain for each selected step. | Legacy diagnostic | To check whether later windows add real signal. | Yes |
-| `outputs/tables/panel_node_coverage.csv` | Stage 05 | Node coverage for selected panel sizes. | Legacy diagnostic | To identify covered and uncovered nodes. | Yes |
-| `outputs/tables/panel_summary.csv` | Stage 05 | Panel-size summaries and alternative ranking comparisons. | Legacy final summary | To compare panel sizes and selection settings. | Yes |
+| `outputs/tables/panel_candidates.csv` | Stage 05 | One row per evaluated candidate panel, including explicit per-target evidence vectors, redundancy metrics, feasibility summaries, within-size Pareto status, cross-size Pareto status, and deterministic within-size rank. | Final diagnostic summary | To compare candidate panels transparently. | Yes |
+| `outputs/tables/panel_target_scores.csv` | Stage 05 | One row per evaluated panel and primary target, with the best supporting amplicon, best and second-best normalized gains, relative gain, and support counts. | Final diagnostic summary | To inspect how each panel supports each target. | Yes |
+| `outputs/tables/pareto_panels_by_size.csv` | Stage 05 | Non-dominated subset of evaluated panels within each fixed panel size. | Final diagnostic summary | To review the within-size Pareto frontiers. | Yes |
+| `outputs/tables/cross_size_pareto_panels.csv` | Stage 05 | Non-dominated subset of evaluated panels when panel size is treated as a separate minimisation objective. | Secondary diagnostic summary | To review trade-offs across sizes. | Yes |
+| `outputs/tables/pareto_panels.csv` | Stage 05 | Compatibility alias of `cross_size_pareto_panels.csv`. | Compatibility summary | For legacy downstream scripts. | Yes |
+| `outputs/tables/recommended_provisional_panel.csv` | Stage 05 | Amplicons from the recommended provisional panel, with per-target evidence, feasibility metrics, and recommendation metadata. | Final recommended panel | Always inspect after panel tuning. | Yes |
+| `outputs/tables/selected_panel.csv` | Stage 05 | Compatibility alias of `recommended_provisional_panel.csv`. | Compatibility summary | For legacy downstream scripts. | Yes |
+| `outputs/tables/recommended_panel_alternatives.csv` | Stage 05 | Top alternative panels at the recommended size. | Final diagnostic summary | To keep backup choices if primer design later fails. | Yes |
+| `outputs/tables/panel_size_comparison.csv` | Stage 05 | Best panel of each size together with search method, evaluation counts, Pareto counts, marginal deltas, and recommendation metadata. | Diagnostic summary | To compare the marginal benefit of larger panels. | Yes |
+| `outputs/tables/panel_summary.csv` | Stage 05 | Compatibility alias of `panel_size_comparison.csv`. | Compatibility summary | For legacy downstream scripts and report generation. | Yes |
+| `outputs/tables/panel_search_summary.csv` | Stage 05 | Candidate counts before and after filtering/reduction, per-size search method summary, and recommendation metadata. | Diagnostic summary | To check whether exact or approximate search was used. | Yes |
+| `outputs/figures/recommended_provisional_panel_panels.png` | Stage 05 | Recommended panel layout plus a compact best-by-size summary. | Diagnostic figure | To inspect panel layout and marginal improvement at a glance. | Yes |
+| `outputs/figures/selected_panel_panels.png` | Stage 05 | Compatibility alias of `recommended_provisional_panel_panels.png`. | Compatibility figure | For legacy downstream scripts. | Yes |
 | `outputs/tables/validation_panel_summary.csv` | Stage 06 | Complete-genome validation summaries by panel size. | Legacy diagnostic | To compare parameter sets. | Yes |
 | `outputs/tables/validation_tip_summary.csv` | Stage 06 | Per-tip retained signal summaries. | Legacy diagnostic | To find genomes with poor retained signal. | Yes |
 | `outputs/tables/validation_fragment_summary.csv` | Stage 06 | Random fixed-fragment signal summaries. | Legacy diagnostic baseline | To compare selected panels to generic fragments. | Yes |
@@ -43,4 +52,4 @@ Generated files are written under `data/processed/` and `outputs/`. They are saf
 
 Most tables are also written as `.rds` files where downstream scripts need exact R types. Use CSV files for manual review; use RDS files for pipeline reruns.
 
-Stage 04 now reports candidate amplicon regions rather than a final assay panel. Stages 05-09 still contain legacy assay-oriented outputs and will be revisited in a later redesign.
+Stage 04 now reports candidate amplicon regions rather than a final assay panel. Stage 05 now compares candidate amplicon panels explicitly and retains both absolute and target-relative evidence vectors. Later stages keep compatibility outputs where needed, but the primary stage-05 products are the new panel comparison tables above.

@@ -1,37 +1,42 @@
-# Milestone 3: Greedy Panel Selection
+# Milestone 3: Candidate Amplicon Panel Selection
 
 ## Goal
 
-Select complementary marker windows that jointly cover informative MCC-tree nodes while limiting redundancy.
+Compare small candidate amplicon panels from the stage-04 outputs using transparent multi-objective criteria.
 
 ## Expected Inputs
 
-- Window scoring table.
-- Window-by-node informativeness matrix.
-- Selection constraints such as maximum panel size, window spacing, and minimum marginal gain.
+- Candidate amplicon table from stage 04.
+- Candidate-amplicon target-score table from stage 04.
+- Optional candidate-amplicon SNP table from stage 04.
+- Selection constraints such as maximum panel size, overlap limits, and candidate-feasibility filters.
 
 ## Expected Outputs
 
-- Selected marker panel table.
-- Marginal gain and cumulative score summaries.
-- Node coverage table for each panel size.
+- Candidate panel comparison table.
+- Panel-by-target score table.
+- Pareto-optimal panel table.
+- Top-ranked selected panel table.
+- Panel-size comparison summary.
 
-Implemented outputs are written by `scripts/05_select_marker_panel.R` under
+Implemented outputs are written by `scripts/05_select_panel.R` under
 `outputs/tables/`:
 
+- `panel_candidates.csv`
+- `panel_target_scores.csv`
+- `pareto_panels.csv`
 - `selected_panel.csv`
-- `selected_panel_steps.csv`
-- `panel_node_coverage.csv`
+- `panel_size_comparison.csv`
 - `panel_summary.csv`
 
 The script reads `analysis.panel_selection` from `config/config.yml`, including
-requested panel sizes, minimum marginal gain, retained-window SNP and score
-thresholds, optional missingness and width filters, selected-window overlap or
-spacing constraints, and whether repeated node coverage is capped or partially
-credited.
+panel-size limits, candidate filtering thresholds, overlap and spacing
+constraints, local-redundancy reduction settings, and the evidence thresholds
+used for support summaries.
 
 ## Success Criteria
 
-- The selected panel improves cumulative node coverage at each step.
-- Redundant neighbouring windows are avoided when configured.
-- Panel summaries explain which MCC-tree nodes are newly covered by each selected window.
+- Candidate panels are compared deterministically.
+- Pareto-optimal panels are retained and reported.
+- Redundant neighbouring amplicons are avoided when configured.
+- Panel summaries explain which primary targets each selected panel supports.

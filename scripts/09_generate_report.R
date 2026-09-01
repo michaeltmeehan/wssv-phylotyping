@@ -65,6 +65,12 @@ safe_unique <- function(x, col) if (is.null(x) || !col %in% names(x)) NA_integer
 status_counts <- function(x) {
   if (is.null(x) || !"status" %in% names(x)) data.frame() else count_values(x$status)
 }
+is_amplicon_panel <- function(x) {
+  !is.null(x) && (
+    ("candidate_id" %in% names(x) && any(grepl("^gain_[0-9]+$", names(x))) ) ||
+      ("candidate_ids" %in% names(x) && "min_absolute_target_gain" %in% names(x))
+  )
+}
 
 partial_dir <- config$paths$partials
 if (is.null(partial_dir)) {
@@ -97,9 +103,18 @@ invisible(write_report_extract(data$selected_panel, file.path(table_dir, "report
 invisible(write_report_extract(data$validation_panel_summary, file.path(table_dir, "report_validation_summary.csv")))
 invisible(write_report_extract(data$classifier_training_summary, file.path(table_dir, "report_classifier_summary.csv")))
 
-final_covered_nodes <- if (is.null(data$selected_panel) || nrow(data$selected_panel) == 0L) character() else {
+selected_panel_targets <- if (is_amplicon_panel(data$selected_panel)) {
+  sort(as.integer(gsub("^gain_", "", grep("^gain_[0-9]+$", names(data$selected_panel), value = TRUE))))
+} else {
+  character()
+}
+final_covered_nodes <- if (!is_amplicon_panel(data$selected_panel) || nrow(data$selected_panel) == 0L) {
+  character()
+} else if ("new_node_ids" %in% names(data$selected_panel)) {
   ids <- unlist(strsplit(paste(data$selected_panel$new_node_ids, collapse = ";"), ";", fixed = TRUE))
   unique(ids[nzchar(ids)])
+} else {
+  as.character(selected_panel_targets)
 }
 eligible_node_ids <- if (!is.null(pre) && !is.null(pre$all_node_metadata) && "node_id" %in% names(pre$all_node_metadata)) {
   as.character(pre$all_node_metadata$node_id)
@@ -220,16 +235,55 @@ lines <- c(
   "",
   "## Selected Marker Panel Summary",
   "",
-  "Selected candidate marker regions:",
+  if (is_amplicon_panel(data$selected_panel)) {
+    "Selected candidate amplicons:"
+  } else {
+    "Selected candidate marker regions:"
+  },
   "",
-  table_or_note(data$selected_panel, c("selection_step", "window_id", "start", "end", "width", "marginal_gain", "cumulative_gain", "newly_covered_nodes", "total_covered_nodes"), missing_note = missing_note("selected_panel")),
+  if (is_amplicon_panel(data$selected_panel)) {
+    table_or_note(
+      data$selected_panel,
+      c(
+        "panel_id",
+        "panel_rank",
+        "panel_candidate_order",
+        "candidate_id",
+        "window_id",
+        "start",
+        "end",
+        "length",
+        paste0("gain_", selected_panel_targets),
+        paste0("relative_gain_", selected_panel_targets)
+      ),
+      missing_note = missing_note("selected_panel")
+    )
+  } else {
+    table_or_note(data$selected_panel, c("selection_step", "window_id", "start", "end", "width", "marginal_gain", "cumulative_gain", "newly_covered_nodes", "total_covered_nodes"), missing_note = missing_note("selected_panel"))
+  },
   "",
-  "Panel-level summaries for requested sizes:",
+  if (is_amplicon_panel(data$panel_summary)) {
+    "Panel-level summaries for requested sizes:"
+  } else {
+    "Panel-level summaries for requested sizes:"
+  },
   "",
-  table_or_note(panel_size_subset(data$panel_summary), c("method", "panel_size", "windows_selected", "cumulative_gain", "total_window_score", "nodes_covered", "newly_covered_nodes_last_step"), missing_note = missing_note("panel_summary")),
+  if (is_amplicon_panel(data$panel_summary)) {
+    table_or_note(panel_size_subset(data$panel_summary), c("panel_id", "panel_size", "candidate_ids", "min_absolute_target_gain", "min_target_relative_gain", "number_of_targets_with_two_supporting_amplicons", "min_regional_complete_fraction", "both_flanks_acceptable", "total_length", "pareto_status"), missing_note = missing_note("panel_summary"))
+  } else {
+    table_or_note(panel_size_subset(data$panel_summary), c("method", "panel_size", "windows_selected", "cumulative_gain", "total_window_score", "nodes_covered", "newly_covered_nodes_last_step"), missing_note = missing_note("panel_summary"))
+  },
   "",
-  paste0("Covered nodes in the selected panel: ", if (length(final_covered_nodes) == 0L) "not available" else paste(final_covered_nodes, collapse = ", ")),
-  paste0("Eligible nodes not covered by the selected panel: ", if (length(uncovered_nodes) == 0L) "none identified" else paste(uncovered_nodes, collapse = ", ")),
+  if (is_amplicon_panel(data$selected_panel)) {
+    paste0("Primary targets represented in the selected panel: ", if (length(selected_panel_targets) == 0L) "not available" else paste(selected_panel_targets, collapse = ", "))
+  } else {
+    paste0("Covered nodes in the selected panel: ", if (length(final_covered_nodes) == 0L) "not available" else paste(final_covered_nodes, collapse = ", "))
+  },
+  if (is_amplicon_panel(data$selected_panel)) {
+    paste0("Eligible nodes not covered by the selected panel: ", "not directly comparable for the amplicon-panel schema")
+  } else {
+    paste0("Eligible nodes not covered by the selected panel: ", if (length(uncovered_nodes) == 0L) "none identified" else paste(uncovered_nodes, collapse = ", "))
+  },
   "",
   "These are candidate marker regions from tree-informed signal summaries. They are not validated primer assays, and primer-feasible flanks have not been assessed by this reporting script.",
   "",

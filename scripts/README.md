@@ -7,7 +7,7 @@ The `scripts/` directory contains numbered entry-point scripts for the staged wo
 2. `02_score_snps.R`: score SNPs against MCC-tree clades.
 3. `03_summarise_sites.R`: summarize and rank informative sites.
 4. `04_score_windows.R`: aggregate SNP signal into genomic windows.
-5. `05_select_marker_panel.R`: choose complementary marker windows.
+5. `05_select_panel.R`: compare small candidate amplicon panels from the stage-04 outputs.
 6. `06_validate_panel.R`: validate reduced-region placement.
 7. `07_train_classifier.R`: train the conservative tree-path classifier.
 8. `08_classify_partials.R`: classify partial genomes where signal is sufficient.
@@ -42,15 +42,21 @@ Milestone scripts are runnable from the repository root:
   `outputs/tables/candidate_amplicons.csv`,
   `outputs/tables/candidate_amplicon_target_scores.csv`,
   `outputs/tables/candidate_amplicon_snps.csv`, and the spatial diagnostic
-  figure `outputs/figures/candidate_amplicons_spatial.png`. The later
-  panel-selection stages still use the older window path and are legacy until
-  they are redesigned around these outputs.
-- `05_select_marker_panel.R` filters scored windows, greedily selects
-  complementary non-redundant windows, compares simple weighted-gain baselines,
-  and writes `outputs/tables/selected_panel.csv`,
-  `outputs/tables/selected_panel_steps.csv`,
-  `outputs/tables/panel_node_coverage.csv`, and
-  `outputs/tables/panel_summary.csv`.
+  figure `outputs/figures/candidate_amplicons_spatial.png`.
+- `05_select_panel.R` compares candidate amplicon panels using transparent
+  multi-objective criteria, evaluates each allowed panel size independently,
+  retains within-size and cross-size Pareto sets, and writes
+  `outputs/tables/panel_candidates.csv`,
+  `outputs/tables/panel_target_scores.csv`,
+  `outputs/tables/pareto_panels_by_size.csv`,
+  `outputs/tables/cross_size_pareto_panels.csv`,
+  `outputs/tables/recommended_provisional_panel.csv`,
+  `outputs/tables/recommended_panel_alternatives.csv`,
+  `outputs/tables/panel_size_comparison.csv`,
+  `outputs/tables/panel_summary.csv`, and
+  compatibility aliases `outputs/tables/selected_panel.csv` and
+  `outputs/tables/pareto_panels.csv`, plus
+  `outputs/figures/recommended_provisional_panel_panels.png`.
 - `06_validate_panel.R` evaluates whether selected panel regions retain
   informative complete-genome signal, compares top-weighted and random matched
   window baselines, summarizes random fixed-length artificial fragments, and
