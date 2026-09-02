@@ -11,22 +11,26 @@
 #   data/processed/leave_one_out_validation.csv
 #
 # For each reference taxon:
-#   1. Treat that taxon's observed SNP states as the query.
-#   2. Remove the held-out taxon from the candidate terminal states.
-#   3. Calculate posterior probability across the remaining reference taxa.
-#   4. Propagate terminal posterior mass to all internal nodes.
-#   5. Record the posterior probability assigned to every ancestor of the
-#      held-out taxon.
+#   1. Retain its observed SNP states as the query.
+#   2. Remove its sequence information from the training data.
+#   3. Rebuild the hierarchical allele model.
+#   4. Exclude the held-out taxon from the terminal posterior distribution.
+#   5. Classify the query using all observed polymorphic sites.
+#   6. Propagate terminal posterior mass to every internal node.
+#   7. Record posterior support for the held-out taxon's true ancestors.
 #
-# Because the held-out taxon is removed from the candidate set, successful
-# validation does not mean identifying the exact taxon. Instead, it measures
-# whether posterior mass is concentrated within the correct ancestral clades.
+# The tree topology itself is retained during leave-one-out validation.
+# Only the held-out taxon's nucleotide observations are removed.
 #
-# This stage uses all polymorphic SNPs available for each held-out taxon.
-# Missing states in the held-out query contribute no evidence.
+# For lambda = 0, this reduces to the deterministic-tip classifier.
+# For lambda > 0, terminal allele distributions borrow information
+# hierarchically from ancestral nodes.
 
 if (!requireNamespace("yaml", quietly = TRUE)) {
-  stop("Package 'yaml' is required to read config/config.yml.", call. = FALSE)
+  stop(
+    "Package 'yaml' is required to read config/config.yml.",
+    call. = FALSE
+  )
 }
 
 config <- yaml::read_yaml("config/config.yml")
@@ -39,7 +43,8 @@ classifier_path <- file.path(
 
 if (!file.exists(classifier_path)) {
   stop(
-    "Classifier structure not found: ", classifier_path,
+    "Classifier structure not found: ",
+    classifier_path,
     "\nRun stage 03 first.",
     call. = FALSE
   )
@@ -59,9 +64,13 @@ source("scripts/04_classify_query.R")
 # Configuration
 # -------------------------------------------------------------------------
 
+lambda <- 20
 epsilon <- 0.01
 
-n_tips <- nrow(classifier$terminal_states)
+n_tips <- nrow(
+  classifier$terminal_states
+)
+
 tip_names <- classifier$terminal_states$taxon
 
 
@@ -72,6 +81,7 @@ tip_names <- classifier$terminal_states$taxon
 classify_query_excluding_tip <- function(
     query,
     classifier,
+    allele_model,
     excluded_taxon,
     epsilon = 0.01
 ) {
@@ -79,6 +89,7 @@ classify_query_excluding_tip <- function(
   likelihood_result <- calculate_tip_log_likelihoods(
     query = query,
     classifier = classifier,
+    allele_model = allele_model,
     epsilon = epsilon
   )
   
@@ -97,7 +108,7 @@ classify_query_excluding_tip <- function(
     )
   }
   
-  # Equal prior probability across all remaining reference taxa.
+  # Equal prior probability across all retained terminal states.
   prior <- rep(
     1 / (length(log_likelihood) - 1L),
     length(log_likelihood)
@@ -141,12 +152,6 @@ classify_query_excluding_tip <- function(
     n_informative = unname(
       likelihood_result$n_informative
     ),
-    n_matches = unname(
-      likelihood_result$n_matches
-    ),
-    n_mismatches = unname(
-      likelihood_result$n_mismatches
-    ),
     stringsAsFactors = FALSE
   )
   
@@ -185,7 +190,11 @@ for (i in seq_len(n_tips)) {
     held_out_taxon
   )
   
-  # Use every observed polymorphic site in the held-out sequence.
+  
+  # -----------------------------------------------------------------------
+  # Construct query from the original held-out sequence
+  # -----------------------------------------------------------------------
+  
   query_states <- classifier$tip_alleles[
     held_out_taxon,
     ,
@@ -200,7 +209,7 @@ for (i in seq_len(n_tips)) {
     classifier$tip_alleles
   )
   
-  # Remove missing states.
+  # Missing query states provide no evidence.
   query <- query[
     query != 0L
   ]
@@ -213,16 +222,49 @@ for (i in seq_len(n_tips)) {
     )
   }
   
+  
+  # -----------------------------------------------------------------------
+  # Remove held-out nucleotide data from the training classifier
+  # -----------------------------------------------------------------------
+  #
+  # The topology and terminal-state mapping remain unchanged.
+  #
+  # Encoding the held-out training row entirely as missing means it
+  # contributes zero allele counts at every ancestral node.
+  #
+  
+  loo_classifier <- classifier
+  
+  loo_classifier$tip_alleles[
+    held_out_taxon,
+  ] <- 0L
+  
+  
+  # -----------------------------------------------------------------------
+  # Rebuild hierarchical allele model without held-out sequence
+  # -----------------------------------------------------------------------
+  
+  allele_model <- build_hierarchical_allele_model(
+    classifier = loo_classifier,
+    lambda = lambda
+  )
+  
+  
+  # -----------------------------------------------------------------------
+  # Classify held-out sequence
+  # -----------------------------------------------------------------------
+  
   classification <- classify_query_excluding_tip(
     query = query,
-    classifier = classifier,
+    classifier = loo_classifier,
+    allele_model = allele_model,
     excluded_taxon = held_out_taxon,
     epsilon = epsilon
   )
   
   
   # -----------------------------------------------------------------------
-  # Best remaining reference taxon
+  # Best remaining reference terminal state
   # -----------------------------------------------------------------------
   
   tip_result <- classification$tip_posteriors
@@ -245,7 +287,7 @@ for (i in seq_len(n_tips)) {
   
   
   # -----------------------------------------------------------------------
-  # Identify true ancestors of the held-out tip
+  # Identify true ancestors of held-out tip
   # -----------------------------------------------------------------------
   
   true_ancestor_mask <-
@@ -260,8 +302,8 @@ for (i in seq_len(n_tips)) {
     )[true_ancestor_mask]
   )
   
-  # Remove the held-out terminal node itself because its posterior has
-  # deliberately been set to zero.
+  # Remove the terminal node itself because that state was deliberately
+  # assigned prior probability zero.
   true_internal_ancestors <- setdiff(
     true_ancestor_nodes,
     i
@@ -289,7 +331,7 @@ for (i in seq_len(n_tips)) {
   
   
   # -----------------------------------------------------------------------
-  # Find smallest ancestral node with strong posterior support
+  # Find smallest true ancestral node with posterior >= 0.5
   # -----------------------------------------------------------------------
   
   supported_ancestors <- ancestor_posteriors[
@@ -355,6 +397,22 @@ for (i in seq_len(n_tips)) {
   
   
   # -----------------------------------------------------------------------
+  # Posterior assigned to the best true ancestral node
+  # -----------------------------------------------------------------------
+  
+  best_true_ancestor_index <- which.max(
+    ancestor_posteriors$posterior
+  )
+  
+  best_true_ancestor <-
+    ancestor_posteriors[
+      best_true_ancestor_index,
+      ,
+      drop = FALSE
+    ]
+  
+  
+  # -----------------------------------------------------------------------
   # Store summary
   # -----------------------------------------------------------------------
   
@@ -365,8 +423,7 @@ for (i in seq_len(n_tips)) {
     
     best_reference_taxon = best_tip$taxon,
     best_reference_posterior = best_tip$posterior,
-    best_reference_matches = best_tip$n_matches,
-    best_reference_mismatches = best_tip$n_mismatches,
+    best_reference_log_likelihood = best_tip$log_likelihood,
     
     parent_node = parent_node,
     parent_clade_size = parent_size,
@@ -376,10 +433,23 @@ for (i in seq_len(n_tips)) {
     smallest_supported_clade_size = smallest_supported_size,
     smallest_supported_posterior = smallest_supported_posterior,
     
+    best_true_ancestor_node =
+      best_true_ancestor$node_id,
+    
+    best_true_ancestor_clade_size =
+      best_true_ancestor$clade_size,
+    
+    best_true_ancestor_posterior =
+      best_true_ancestor$posterior,
+    
     stringsAsFactors = FALSE
   )
   
-  # Retain full posterior distributions as attributes for the RDS output.
+  
+  # -----------------------------------------------------------------------
+  # Retain full results for RDS
+  # -----------------------------------------------------------------------
+  
   attr(
     results[[i]],
     "tip_posteriors"
@@ -406,13 +476,10 @@ summary_table <- do.call(
   lapply(
     results,
     function(x) {
-      attributes(x)[
-        c(
-          "tip_posteriors",
-          "node_posteriors",
-          "ancestor_posteriors"
-        )
-      ] <- NULL
+      
+      attr(x, "tip_posteriors") <- NULL
+      attr(x, "node_posteriors") <- NULL
+      attr(x, "ancestor_posteriors") <- NULL
       
       x
     }
@@ -427,6 +494,7 @@ rownames(summary_table) <- NULL
 # -------------------------------------------------------------------------
 
 validation <- list(
+  lambda = lambda,
   epsilon = epsilon,
   summary = summary_table,
   
@@ -435,7 +503,8 @@ validation <- list(
     function(i) {
       
       list(
-        held_out_taxon = summary_table$held_out_taxon[[i]],
+        held_out_taxon =
+          summary_table$held_out_taxon[[i]],
         
         tip_posteriors = attr(
           results[[i]],
@@ -493,6 +562,7 @@ write.csv(
 message("")
 message("Leave-one-out validation complete")
 message("  taxa tested: ", nrow(summary_table))
+message("  lambda: ", lambda)
 message("  epsilon: ", epsilon)
 
 message(
@@ -524,6 +594,14 @@ message(
   ),
   "/",
   nrow(summary_table)
+)
+
+message(
+  "  median smallest supported clade size: ",
+  median(
+    summary_table$smallest_supported_clade_size,
+    na.rm = TRUE
+  )
 )
 
 message(

@@ -1,38 +1,51 @@
 #!/usr/bin/env Rscript
 
-# Stage 04: classify a query sequence from an arbitrary subset of SNP calls.
+# Stage 04: classify a query sequence using a hierarchical allele model.
 #
 # Input:
 #   data/processed/classifier.rds
 #
-# Output:
-#   Functions for calculating:
-#     - posterior probability for each reference tip/terminal state
-#     - posterior probability for every node in the tree
+# The classifier uses all reference tips as mutually exclusive terminal states.
+# Allele probabilities for each terminal state are estimated hierarchically
+# through the reference tree:
 #
-# The classifier is target-agnostic. Any subset of polymorphic sites may be
-# supplied. Missing/unobserved sites contribute no evidence.
+#   theta[v,s,a] =
+#       (n[v,s,a] + lambda * theta[parent(v),s,a]) /
+#       (n[v,s]   + lambda)
 #
-# Baseline likelihood model:
-#   For each observed query allele:
+# where:
+#   n[v,s,a] = number of descendant taxa at node v carrying allele a at site s
+#   n[v,s]   = number of descendant taxa at node v called at site s
 #
-#     P(query allele | reference tip)
+# lambda controls shrinkage toward the parent:
 #
-#   is determined by a symmetric nucleotide error model with error probability
-#   epsilon:
+#   lambda = 0:
+#       reproduces the original deterministic-tip classifier for called
+#       reference states.
 #
-#     match:       1 - epsilon
-#     mismatch:    epsilon / 3
+#   lambda > 0:
+#       progressively borrows allele-frequency information from ancestors.
 #
-# Reference states encoded as 0 are treated as unavailable/missing and do not
-# contribute evidence for that tip at that site.
+# Query observations are linked to the latent reference allele distribution
+# through a symmetric nucleotide-error model:
 #
-# This is deliberately a simple baseline classifier. It does not yet model
-# within-clade allele frequencies, SNP dependence, phylogenetic uncertainty,
-# or calibrated likelihood tempering.
+#   P(Y=b | theta) =
+#       (1 - epsilon) * theta[b] +
+#       (epsilon / 3) * (1 - theta[b])
+#
+# Missing query states contribute no evidence.
+#
+# For lambda > 0, a missing reference state at a tip inherits its allele
+# distribution from its ancestors.
+#
+# For lambda = 0, a missing reference state contributes no evidence, matching
+# the behaviour of the original Stage 04 classifier.
 
 if (!requireNamespace("yaml", quietly = TRUE)) {
-  stop("Package 'yaml' is required to read config/config.yml.", call. = FALSE)
+  stop(
+    "Package 'yaml' is required to read config/config.yml.",
+    call. = FALSE
+  )
 }
 
 config <- yaml::read_yaml("config/config.yml")
@@ -45,7 +58,8 @@ classifier_path <- file.path(
 
 if (!file.exists(classifier_path)) {
   stop(
-    "Classifier structure not found: ", classifier_path,
+    "Classifier structure not found: ",
+    classifier_path,
     "\nRun stage 03 first.",
     call. = FALSE
   )
@@ -59,11 +73,13 @@ classifier <- readRDS(classifier_path)
 # -------------------------------------------------------------------------
 
 required_components <- c(
+  "tree",
   "terminal_states",
   "tip_alleles",
   "node_tip_mask",
   "node_metadata",
-  "polymorphic_sites"
+  "polymorphic_sites",
+  "root_node"
 )
 
 missing_components <- setdiff(
@@ -81,12 +97,367 @@ if (length(missing_components) > 0L) {
 
 
 # -------------------------------------------------------------------------
+# Build hierarchical allele probabilities
+# -------------------------------------------------------------------------
+
+build_hierarchical_allele_model <- function(
+    classifier,
+    lambda = 0
+) {
+  
+  if (
+    !is.numeric(lambda) ||
+    length(lambda) != 1L ||
+    is.na(lambda) ||
+    lambda < 0
+  ) {
+    stop(
+      "'lambda' must be a single non-negative number.",
+      call. = FALSE
+    )
+  }
+  
+  tree <- classifier$tree
+  tip_alleles <- classifier$tip_alleles
+  node_tip_mask <- classifier$node_tip_mask
+  
+  n_tips <- nrow(tip_alleles)
+  n_sites <- ncol(tip_alleles)
+  n_nodes <- nrow(node_tip_mask)
+  
+  site_names <- colnames(tip_alleles)
+  
+  allele_names <- c("A", "C", "G", "T")
+  
+  
+  # -----------------------------------------------------------------------
+  # Count allele observations at every node
+  # -----------------------------------------------------------------------
+  
+  allele_counts <- array(
+    0,
+    dim = c(
+      n_nodes,
+      n_sites,
+      4L
+    ),
+    dimnames = list(
+      node = rownames(node_tip_mask),
+      site = site_names,
+      allele = allele_names
+    )
+  )
+  
+  called_counts <- matrix(
+    0L,
+    nrow = n_nodes,
+    ncol = n_sites,
+    dimnames = list(
+      rownames(node_tip_mask),
+      site_names
+    )
+  )
+  
+  for (node_index in seq_len(n_nodes)) {
+    
+    descendant_tips <- node_tip_mask[
+      node_index,
+      ,
+      drop = TRUE
+    ]
+    
+    x <- tip_alleles[
+      descendant_tips,
+      ,
+      drop = FALSE
+    ]
+    
+    called_counts[node_index, ] <-
+      colSums(x != 0L)
+    
+    allele_counts[node_index, , "A"] <-
+      colSums(x == 1L)
+    
+    allele_counts[node_index, , "C"] <-
+      colSums(x == 2L)
+    
+    allele_counts[node_index, , "G"] <-
+      colSums(x == 3L)
+    
+    allele_counts[node_index, , "T"] <-
+      colSums(x == 4L)
+  }
+  
+  
+  # -----------------------------------------------------------------------
+  # Construct parent lookup
+  # -----------------------------------------------------------------------
+  
+  parent <- rep(
+    NA_integer_,
+    n_nodes
+  )
+  
+  names(parent) <- as.character(
+    seq_len(n_nodes)
+  )
+  
+  for (i in seq_len(nrow(tree$edge))) {
+    
+    parent[
+      as.character(tree$edge[i, 2])
+    ] <- tree$edge[i, 1]
+  }
+  
+  
+  # -----------------------------------------------------------------------
+  # Order nodes from root toward tips
+  # -----------------------------------------------------------------------
+  #
+  # Hierarchical probabilities must be calculated only after the parent's
+  # probabilities are available.
+  #
+  
+  children <- split(
+    tree$edge[, 2],
+    tree$edge[, 1]
+  )
+  
+  traversal_order <- integer(0)
+  
+  queue <- classifier$root_node
+  
+  while (length(queue) > 0L) {
+    
+    node <- queue[[1]]
+    
+    queue <- queue[-1]
+    
+    traversal_order <- c(
+      traversal_order,
+      node
+    )
+    
+    node_children <- children[[as.character(node)]]
+    
+    if (!is.null(node_children)) {
+      queue <- c(
+        queue,
+        node_children
+      )
+    }
+  }
+  
+  if (length(traversal_order) != n_nodes) {
+    stop(
+      "Could not construct a complete root-to-tip traversal.",
+      call. = FALSE
+    )
+  }
+  
+  
+  # -----------------------------------------------------------------------
+  # Allocate hierarchical allele probabilities
+  # -----------------------------------------------------------------------
+  
+  theta <- array(
+    NA_real_,
+    dim = c(
+      n_nodes,
+      n_sites,
+      4L
+    ),
+    dimnames = list(
+      node = rownames(node_tip_mask),
+      site = site_names,
+      allele = allele_names
+    )
+  )
+  
+  
+  # -----------------------------------------------------------------------
+  # Root probabilities
+  # -----------------------------------------------------------------------
+  #
+  # At the root there is no parent from which to borrow information.
+  #
+  # Use the empirical allele distribution among all called reference taxa.
+  #
+  # If an entire polymorphic site somehow has no called states, use a uniform
+  # distribution. This should not ordinarily occur.
+  #
+  
+  root <- classifier$root_node
+  
+  root_called <- called_counts[
+    as.character(root),
+  ]
+  
+  for (a in seq_len(4L)) {
+    
+    root_count <- allele_counts[
+      as.character(root),
+      ,
+      a
+    ]
+    
+    theta[
+      as.character(root),
+      ,
+      a
+    ] <- ifelse(
+      root_called > 0L,
+      root_count / root_called,
+      0.25
+    )
+  }
+  
+  
+  # -----------------------------------------------------------------------
+  # Recursively estimate child probabilities
+  # -----------------------------------------------------------------------
+  
+  non_root_nodes <- traversal_order[
+    traversal_order != root
+  ]
+  
+  for (node in non_root_nodes) {
+    
+    node_name <- as.character(node)
+    parent_name <- as.character(
+      parent[node_name]
+    )
+    
+    n_called <- called_counts[
+      node_name,
+    ]
+    
+    if (lambda == 0) {
+      
+      # Exact empirical distribution.
+      #
+      # Sites with no observations remain NA. At terminal tips this
+      # reproduces the original deterministic reference model for called
+      # states and the original "no evidence" treatment for missing states.
+      
+      observed <- n_called > 0L
+      
+      for (a in seq_len(4L)) {
+        
+        theta[
+          node_name,
+          observed,
+          a
+        ] <-
+          allele_counts[
+            node_name,
+            observed,
+            a
+          ] /
+          n_called[observed]
+      }
+      
+    } else {
+      
+      # Hierarchically smoothed distribution.
+      #
+      # If n_called = 0:
+      #
+      #   theta_child = theta_parent
+      #
+      # exactly, so missing reference information is inherited naturally.
+      
+      denominator <- n_called + lambda
+      
+      for (a in seq_len(4L)) {
+        
+        theta[
+          node_name,
+          ,
+          a
+        ] <-
+          (
+            allele_counts[
+              node_name,
+              ,
+              a
+            ] +
+              lambda *
+              theta[
+                parent_name,
+                ,
+                a
+              ]
+          ) /
+          denominator
+      }
+    }
+  }
+  
+  
+  # -----------------------------------------------------------------------
+  # Extract terminal-state distributions
+  # -----------------------------------------------------------------------
+  
+  tip_theta <- theta[
+    as.character(seq_len(n_tips)),
+    ,
+    ,
+    drop = FALSE
+  ]
+  
+  dimnames(tip_theta)[[1]] <-
+    classifier$terminal_states$taxon
+  
+  
+  # -----------------------------------------------------------------------
+  # Validate probability distributions
+  # -----------------------------------------------------------------------
+  
+  theta_sum <- apply(
+    tip_theta,
+    c(1, 2),
+    sum
+  )
+  
+  non_missing <- !is.na(
+    theta_sum
+  )
+  
+  if (
+    any(
+      abs(
+        theta_sum[non_missing] - 1
+      ) > 1e-10
+    )
+  ) {
+    stop(
+      "Hierarchical terminal allele probabilities do not sum to 1.",
+      call. = FALSE
+    )
+  }
+  
+  
+  list(
+    lambda = lambda,
+    theta = theta,
+    tip_theta = tip_theta,
+    allele_counts = allele_counts,
+    called_counts = called_counts,
+    parent = parent,
+    traversal_order = traversal_order
+  )
+}
+
+
+# -------------------------------------------------------------------------
 # Core likelihood function
 # -------------------------------------------------------------------------
 
 calculate_tip_log_likelihoods <- function(
     query,
     classifier,
+    allele_model,
     epsilon = 0.01
 ) {
   
@@ -102,22 +473,6 @@ calculate_tip_log_likelihoods <- function(
       call. = FALSE
     )
   }
-  
-  tip_alleles <- classifier$tip_alleles
-  valid_sites <- classifier$polymorphic_sites
-  
-  # Query must be a named integer/numeric vector:
-  #
-  #   names(query) = genomic/alignment site indices
-  #   values        = 1:A, 2:C, 3:G, 4:T, 0:missing
-  #
-  # Example:
-  #
-  #   query <- c(
-  #     "6518" = 1L,
-  #     "54397" = 3L,
-  #     "108500" = 4L
-  #   )
   
   if (is.null(names(query))) {
     stop(
@@ -151,7 +506,11 @@ calculate_tip_log_likelihoods <- function(
     )
   }
   
-  # Ignore query sites that are missing.
+  
+  # -----------------------------------------------------------------------
+  # Remove missing query states
+  # -----------------------------------------------------------------------
+  
   keep <- query != 0L
   
   query <- query[keep]
@@ -164,7 +523,13 @@ calculate_tip_log_likelihoods <- function(
     )
   }
   
-  # Restrict to SNPs represented in the trained classifier.
+  
+  # -----------------------------------------------------------------------
+  # Restrict to sites represented by the classifier
+  # -----------------------------------------------------------------------
+  
+  valid_sites <- classifier$polymorphic_sites
+  
   in_classifier <- query_sites %in% valid_sites
   
   if (!any(in_classifier)) {
@@ -179,7 +544,7 @@ calculate_tip_log_likelihoods <- function(
   
   site_columns <- match(
     as.character(query_sites),
-    colnames(tip_alleles)
+    dimnames(allele_model$tip_theta)[[2]]
   )
   
   if (anyNA(site_columns)) {
@@ -189,55 +554,59 @@ calculate_tip_log_likelihoods <- function(
     )
   }
   
-  reference <- tip_alleles[
-    ,
-    site_columns,
-    drop = FALSE
-  ]
   
-  n_tips <- nrow(reference)
+  # -----------------------------------------------------------------------
+  # Calculate likelihood
+  # -----------------------------------------------------------------------
+  
+  tip_theta <- allele_model$tip_theta
+  
+  n_tips <- dim(tip_theta)[1]
   
   log_likelihood <- numeric(n_tips)
   n_informative <- integer(n_tips)
-  n_matches <- integer(n_tips)
-  n_mismatches <- integer(n_tips)
-  
-  log_match <- log(1 - epsilon)
-  log_mismatch <- log(epsilon / 3)
   
   for (j in seq_along(query)) {
     
     query_state <- query[[j]]
-    reference_state <- reference[, j]
     
-    # A reference state of 0 is missing/unavailable and contributes no
-    # evidence for that particular terminal state.
-    called <- reference_state != 0L
+    theta_query <- tip_theta[
+      ,
+      site_columns[[j]],
+      query_state
+    ]
     
-    matched <- called & reference_state == query_state
-    mismatched <- called & reference_state != query_state
+    # NA occurs only when lambda = 0 and that terminal reference has no
+    # observed allele at this site.
+    informative <- !is.na(
+      theta_query
+    )
     
-    log_likelihood[matched] <-
-      log_likelihood[matched] + log_match
+    emission_probability <-
+      (1 - epsilon) * theta_query +
+      (epsilon / 3) * (1 - theta_query)
     
-    log_likelihood[mismatched] <-
-      log_likelihood[mismatched] + log_mismatch
+    log_likelihood[informative] <-
+      log_likelihood[informative] +
+      log(
+        emission_probability[informative]
+      )
     
-    n_informative <- n_informative + called
-    n_matches <- n_matches + matched
-    n_mismatches <- n_mismatches + mismatched
+    n_informative <-
+      n_informative +
+      informative
   }
   
-  names(log_likelihood) <- rownames(reference)
-  names(n_informative) <- rownames(reference)
-  names(n_matches) <- rownames(reference)
-  names(n_mismatches) <- rownames(reference)
+  names(log_likelihood) <-
+    classifier$terminal_states$taxon
+  
+  names(n_informative) <-
+    classifier$terminal_states$taxon
+  
   
   list(
     log_likelihood = log_likelihood,
     n_informative = n_informative,
-    n_matches = n_matches,
-    n_mismatches = n_mismatches,
     query_sites_used = query_sites
   )
 }
@@ -250,6 +619,7 @@ calculate_tip_log_likelihoods <- function(
 calculate_tip_posteriors <- function(
     query,
     classifier,
+    allele_model,
     epsilon = 0.01,
     prior = NULL
 ) {
@@ -257,12 +627,16 @@ calculate_tip_posteriors <- function(
   likelihood_result <- calculate_tip_log_likelihoods(
     query = query,
     classifier = classifier,
+    allele_model = allele_model,
     epsilon = epsilon
   )
   
-  log_likelihood <- likelihood_result$log_likelihood
+  log_likelihood <-
+    likelihood_result$log_likelihood
   
-  n_tips <- length(log_likelihood)
+  n_tips <- length(
+    log_likelihood
+  )
   
   if (is.null(prior)) {
     prior <- classifier$terminal_states$prior
@@ -289,30 +663,56 @@ calculate_tip_posteriors <- function(
   
   prior <- prior / sum(prior)
   
-  # log posterior up to a normalising constant
-  log_posterior <- log(prior) + log_likelihood
-  
-  # Stable log-sum-exp normalisation
-  max_log_posterior <- max(log_posterior)
-  
-  posterior <- exp(
-    log_posterior - max_log_posterior
+  log_posterior <- rep(
+    -Inf,
+    n_tips
   )
   
-  posterior <- posterior / sum(posterior)
+  positive_prior <- prior > 0
   
-  names(posterior) <- classifier$terminal_states$taxon
+  log_posterior[positive_prior] <-
+    log(
+      prior[positive_prior]
+    ) +
+    log_likelihood[positive_prior]
+  
+  max_log_posterior <- max(
+    log_posterior
+  )
+  
+  posterior <- exp(
+    log_posterior -
+      max_log_posterior
+  )
+  
+  posterior <-
+    posterior /
+    sum(posterior)
   
   data.frame(
-    state_id = classifier$terminal_states$state_id,
-    node_id = classifier$terminal_states$node_id,
-    taxon = classifier$terminal_states$taxon,
-    prior = prior,
-    log_likelihood = unname(log_likelihood),
-    posterior = unname(posterior),
-    n_informative = unname(likelihood_result$n_informative),
-    n_matches = unname(likelihood_result$n_matches),
-    n_mismatches = unname(likelihood_result$n_mismatches),
+    state_id =
+      classifier$terminal_states$state_id,
+    
+    node_id =
+      classifier$terminal_states$node_id,
+    
+    taxon =
+      classifier$terminal_states$taxon,
+    
+    prior =
+      prior,
+    
+    log_likelihood =
+      unname(log_likelihood),
+    
+    posterior =
+      unname(posterior),
+    
+    n_informative =
+      unname(
+        likelihood_result$n_informative
+      ),
+    
     stringsAsFactors = FALSE
   )
 }
@@ -327,7 +727,15 @@ calculate_node_posteriors <- function(
     classifier
 ) {
   
-  if (!all(c("taxon", "posterior") %in% names(tip_posteriors))) {
+  if (
+    !all(
+      c(
+        "taxon",
+        "posterior"
+      ) %in%
+      names(tip_posteriors)
+    )
+  ) {
     stop(
       "'tip_posteriors' must contain columns 'taxon' and 'posterior'.",
       call. = FALSE
@@ -338,12 +746,13 @@ calculate_node_posteriors <- function(
     classifier$node_tip_mask
   )
   
-  posterior <- tip_posteriors$posterior[
-    match(
-      tip_order,
-      tip_posteriors$taxon
-    )
-  ]
+  posterior <-
+    tip_posteriors$posterior[
+      match(
+        tip_order,
+        tip_posteriors$taxon
+      )
+    ]
   
   if (anyNA(posterior)) {
     stop(
@@ -353,17 +762,22 @@ calculate_node_posteriors <- function(
   }
   
   node_posterior <- drop(
-    classifier$node_tip_mask %*% posterior
+    classifier$node_tip_mask %*%
+      posterior
   )
   
-  metadata <- classifier$node_metadata
+  metadata <-
+    classifier$node_metadata
   
-  metadata$posterior <- node_posterior[
-    match(
-      metadata$node_id,
-      as.integer(names(node_posterior))
-    )
-  ]
+  metadata$posterior <-
+    node_posterior[
+      match(
+        metadata$node_id,
+        as.integer(
+          names(node_posterior)
+        )
+      )
+    ]
   
   metadata
 }
@@ -376,34 +790,49 @@ calculate_node_posteriors <- function(
 classify_query <- function(
     query,
     classifier,
+    allele_model,
     epsilon = 0.01,
     prior = NULL
 ) {
   
-  tip_posteriors <- calculate_tip_posteriors(
-    query = query,
-    classifier = classifier,
-    epsilon = epsilon,
-    prior = prior
-  )
+  tip_posteriors <-
+    calculate_tip_posteriors(
+      query = query,
+      classifier = classifier,
+      allele_model = allele_model,
+      epsilon = epsilon,
+      prior = prior
+    )
   
-  node_posteriors <- calculate_node_posteriors(
-    tip_posteriors = tip_posteriors,
-    classifier = classifier
-  )
+  node_posteriors <-
+    calculate_node_posteriors(
+      tip_posteriors = tip_posteriors,
+      classifier = classifier
+    )
   
-  # Sanity checks
   
-  if (abs(sum(tip_posteriors$posterior) - 1) > 1e-12) {
+  # -----------------------------------------------------------------------
+  # Validate posterior conservation
+  # -----------------------------------------------------------------------
+  
+  if (
+    abs(
+      sum(
+        tip_posteriors$posterior
+      ) - 1
+    ) > 1e-12
+  ) {
     stop(
       "Terminal posterior probabilities do not sum to 1.",
       call. = FALSE
     )
   }
   
-  root_posterior <- node_posteriors$posterior[
-    node_posteriors$node_id == classifier$root_node
-  ]
+  root_posterior <-
+    node_posteriors$posterior[
+      node_posteriors$node_id ==
+        classifier$root_node
+    ]
   
   if (
     length(root_posterior) != 1L ||
@@ -415,6 +844,7 @@ classify_query <- function(
     )
   }
   
+  
   list(
     tip_posteriors = tip_posteriors,
     node_posteriors = node_posteriors
@@ -423,47 +853,44 @@ classify_query <- function(
 
 
 # -------------------------------------------------------------------------
-# Example usage
+# Example model construction
 # -------------------------------------------------------------------------
 #
-# Query states use:
+# Original classifier:
 #
-#   A = 1
-#   C = 2
-#   G = 3
-#   T = 4
-#   missing = 0
+# allele_model <- build_hierarchical_allele_model(
+#   classifier,
+#   lambda = 0
+# )
 #
-# For example:
+# Hierarchically smoothed classifier:
+#
+# allele_model <- build_hierarchical_allele_model(
+#   classifier,
+#   lambda = 1
+# )
+#
+#
+# Example query:
 #
 # query <- c(
-#   "6518" = 1L,
-#   "54397" = 3L,
-#   "56235" = 4L,
+#   "6518"   = 1L,
+#   "54397"  = 3L,
+#   "56235"  = 4L,
 #   "108500" = 4L
 # )
 #
 # result <- classify_query(
 #   query = query,
 #   classifier = classifier,
+#   allele_model = allele_model,
 #   epsilon = 0.01
 # )
-#
-# head(
-#   result$tip_posteriors[
-#     order(-result$tip_posteriors$posterior),
-#   ],
-#   10
-# )
-#
-# head(
-#   result$node_posteriors[
-#     order(-result$node_posteriors$posterior),
-#   ],
-#   20
-# )
 
 
-message("Stage 04 classifier functions loaded")
+message("Stage 04 hierarchical classifier functions loaded")
 message("  terminal states: ", nrow(classifier$terminal_states))
-message("  polymorphic sites available: ", length(classifier$polymorphic_sites))
+message(
+  "  polymorphic sites available: ",
+  length(classifier$polymorphic_sites)
+)
