@@ -621,6 +621,7 @@ calculate_tip_posteriors <- function(
     classifier,
     allele_model,
     epsilon = 0.01,
+    tau = 1,
     prior = NULL
 ) {
   
@@ -674,7 +675,7 @@ calculate_tip_posteriors <- function(
     log(
       prior[positive_prior]
     ) +
-    log_likelihood[positive_prior]
+    tau * log_likelihood[positive_prior]
   
   max_log_posterior <- max(
     log_posterior
@@ -792,6 +793,7 @@ classify_query <- function(
     classifier,
     allele_model,
     epsilon = 0.01,
+    tau = 1,
     prior = NULL
 ) {
   
@@ -801,6 +803,7 @@ classify_query <- function(
       classifier = classifier,
       allele_model = allele_model,
       epsilon = epsilon,
+      tau = tau,
       prior = prior
     )
   

@@ -66,6 +66,7 @@ source("scripts/04_classify_query.R")
 
 lambda <- 20
 epsilon <- 0.01
+tau <- 1
 
 n_tips <- nrow(
   classifier$terminal_states
@@ -83,7 +84,8 @@ classify_query_excluding_tip <- function(
     classifier,
     allele_model,
     excluded_taxon,
-    epsilon = 0.01
+    epsilon = 0.01,
+    tau = 1
 ) {
   
   likelihood_result <- calculate_tip_log_likelihoods(
@@ -125,7 +127,7 @@ classify_query_excluding_tip <- function(
   
   log_posterior[retained] <-
     log(prior[retained]) +
-    log_likelihood[retained]
+    tau * log_likelihood[retained]
   
   max_log_posterior <- max(
     log_posterior[retained]
@@ -259,7 +261,8 @@ for (i in seq_len(n_tips)) {
     classifier = loo_classifier,
     allele_model = allele_model,
     excluded_taxon = held_out_taxon,
-    epsilon = epsilon
+    epsilon = epsilon,
+    tau = tau
   )
   
   
@@ -496,6 +499,7 @@ rownames(summary_table) <- NULL
 validation <- list(
   lambda = lambda,
   epsilon = epsilon,
+  tau = tau,
   summary = summary_table,
   
   cases = lapply(
