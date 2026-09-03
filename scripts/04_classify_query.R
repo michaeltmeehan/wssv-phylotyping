@@ -887,7 +887,8 @@ classify_query <- function(
 #   query = query,
 #   classifier = classifier,
 #   allele_model = allele_model,
-#   epsilon = 0.01
+#   epsilon = 0.01,
+#   tau = 1
 # )
 
 
